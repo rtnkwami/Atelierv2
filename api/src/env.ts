@@ -9,13 +9,42 @@ import { z } from 'zod';
 dotenv.config();
 
 const configSchema = z.object({
-    port: z.number()
-})
+    api: z.object({
+        port: z.number().nonnegative()
+    }),
+    db: z.object({
+        name: z.string().nonempty(),
+        user: z.string().nonempty(),
+        password: z.string().nonempty(),
+        host: z.string().nonempty(),
+        dialect: z.enum([
+            'mysql',
+            'postgres',
+            'sqlite',
+            'mariadb',
+            'mssql',
+            'db2',
+            'oracle'
+        ]).or(z.string().nonempty())
+    })
+});
+
+type Config = z.infer<typeof configSchema>
 
 const env = {
-    port: Number(process.env.PORT)
+    api: {
+        port: Number(process.env.PORT)
+    },
+    db: {
+        name: process.env.DB_NAME || '',
+        user: process.env.DB_USER || '',
+        password: process.env.DB_USER || '',
+        host: process.env.DB_HOST || '',
+        dialect: process.env.DB_DIALECT || ''
+
+    }
 };
 
-const config = configSchema.parse(env);
+const config: Config = configSchema.parse(env);
 
 export default config;
