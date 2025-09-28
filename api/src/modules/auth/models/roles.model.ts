@@ -1,7 +1,15 @@
 import { sequelize } from "@config/db.config.ts";
-import { DataTypes } from "sequelize";
+import { DataTypes, Model } from "sequelize";
+import type { Optional } from "sequelize";
 
-const Roles = sequelize.define('Roles', {
+type RoleAttributes = {
+    id: string,
+    name: string
+}
+
+type RoleCreationAttributes = Optional<RoleAttributes, "id">
+
+const Role = sequelize.define<Model<RoleAttributes, RoleCreationAttributes>>('Roles', {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -12,6 +20,6 @@ const Roles = sequelize.define('Roles', {
         allowNull: false,
         unique: true
     }
-});
+}, { tableName: 'roles' });
 
-export default Roles;
+export default Role;
