@@ -25,6 +25,6 @@ const Permissions = sequelize.define<Model<PermissionAttributes, PermissionCreat
         allowNull: false,
         unique: true
     }
-});
+},{ tableName: 'permissions' });
 
 export default Permissions;
