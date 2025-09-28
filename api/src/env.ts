@@ -13,6 +13,7 @@ const configSchema = z.object({
         port: z.number().nonnegative()
     }),
     db: z.object({
+        url: z.string().optional(),
         name: z.string().nonempty(),
         user: z.string().nonempty(),
         password: z.string().nonempty(),
@@ -25,7 +26,7 @@ const configSchema = z.object({
             'mssql',
             'db2',
             'oracle'
-        ]).or(z.string().nonempty())
+        ])
     })
 });
 
@@ -40,8 +41,8 @@ const env = {
         user: process.env.DB_USER || '',
         password: process.env.DB_USER || '',
         host: process.env.DB_HOST || '',
-        dialect: process.env.DB_DIALECT || ''
-
+        dialect: process.env.DB_DIALECT || '',
+        url: process.env.DB_URL || '' // URL in case the db changes from a SQL db to another type
     }
 };
 
