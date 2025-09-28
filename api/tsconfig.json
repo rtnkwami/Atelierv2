@@ -6,7 +6,9 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "paths": {
-      "@config/*": ["config/*"]
+      "@config/*": ["config/*"],
+      "@auth/*": ["modules/auth/*"],
+      "@auth/models": ["modules/auth/models/index.ts"]
     }
   },
   "extends": "../tsconfig.base.json",
