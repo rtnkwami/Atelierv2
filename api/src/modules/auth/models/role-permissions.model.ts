@@ -23,7 +23,7 @@ const RolePermissions = sequelize.define<Model<RolePermissionAttributes, RolePer
     },
     role_id: {
         type: DataTypes.UUID,
-        allowNull: false
+        allowNull: false,
     },
     permission_id: {
         type: DataTypes.UUID,
