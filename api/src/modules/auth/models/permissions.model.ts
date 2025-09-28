@@ -2,19 +2,19 @@ import { sequelize } from "@config/db.config.ts";
 import { DataTypes, Model } from "sequelize";
 import type { Optional } from "sequelize";
 
-/** Purpose: RoleAttributes and RoleCreationAttributes exist within this file to inform
+/** Purpose: PermissionAttributes and PermissionCreationAttributes exist within this file to inform
  * Typescript of the attributes needed to create a role. Useful for intellisense and type
  * checking
  */
 
-type RoleAttributes = {
+type PermissionAttributes = {
     id: string,
     name: string
 }
 
-type RoleCreationAttributes = Optional<RoleAttributes, "id">
+type PermissionCreationAttributes = Optional<PermissionAttributes, 'id'>
 
-const Roles = sequelize.define<Model<RoleAttributes, RoleCreationAttributes>>('Roles', {
+const Permissions = sequelize.define<Model<PermissionAttributes, PermissionCreationAttributes>>('Permissions', {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -25,6 +25,6 @@ const Roles = sequelize.define<Model<RoleAttributes, RoleCreationAttributes>>('R
         allowNull: false,
         unique: true
     }
-}, { tableName: 'roles' });
+});
 
-export default Roles;
+export default Permissions;
