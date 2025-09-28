@@ -6,7 +6,7 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const configSchema = z.object({
     api: z.object({
@@ -39,7 +39,7 @@ const env = {
     db: {
         name: process.env.DB_NAME || '',
         user: process.env.DB_USER || '',
-        password: process.env.DB_USER || '',
+        password: process.env.DB_PASSWORD || '',
         host: process.env.DB_HOST || '',
         dialect: process.env.DB_DIALECT || '',
         url: process.env.DB_URL || '' // URL in case the db changes from a SQL db to another type
