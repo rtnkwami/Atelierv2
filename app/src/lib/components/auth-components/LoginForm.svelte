@@ -5,20 +5,41 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { cn } from "$lib/utils.js";
 	import type { HTMLAttributes } from "svelte/elements";
+	import { loginFormType, loginFormAction, accountVerb } from "./auth.store";
 
-	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
+	interface Props extends HTMLAttributes<HTMLDivElement> {
+		login(email: string, password: string): void;
+	}
+
+	let { login, class: className, ...restProps }: Props = $props();
 
 	const id = $props.id();
+
+	function toggleFormType(){
+		if ($loginFormType === "Log in"){
+			loginFormType.set("Sign up");
+			accountVerb.set("Already")
+			loginFormAction.set("Log in")
+		} else {
+			loginFormType.set("Log in");
+			accountVerb.set("Don't")
+			loginFormAction.set("Sign up")
+		}
+
+	}
+
+	let email = $state("");
+	let password = $state("");
 </script>
 
 <div class={cn("flex flex-col gap-6", className)} {...restProps}>
 	<Card.Root>
 		<Card.Header class="text-center">
 			<Card.Title class="text-xl">Welcome back</Card.Title>
-			<Card.Description>Login with your Google account</Card.Description>
+			<Card.Description>{ $loginFormType } with your Google account</Card.Description>
 		</Card.Header>
 		<Card.Content>
-			<form>
+			<form onsubmit={() => { login(email, password) }}>
 				<div class="grid gap-6">
 					<div class="flex flex-col gap-4">
 						<Button variant="outline" class="w-full cursor-pointer">
@@ -28,7 +49,7 @@
 									fill="currentColor"
 								/>
 							</svg>
-							Login with Google
+							{ $loginFormType } with Google
 						</Button>
 					</div>
 					<div
@@ -46,7 +67,10 @@
 								type="email"
 								placeholder="m@example.com"
 								required
+								bind:value={email} 
 							/>
+							<!-- bind:value is called here to bind the result of email input to the password state
+							 variable that was declared at the top -->
 						</div>
 						<div class="grid gap-3">
 							<div class="flex items-center">
@@ -58,13 +82,15 @@
 									Forgot your password?
 								</a>
 							</div>
-							<Input id="password-{id}" type="password" required />
+							<!-- bind:value is called here to bind the result of password input to the password state
+							 variable that was declared at the top -->
+							<Input id="password-{id}" type="password" required bind:value={password}/>
 						</div>
-						<Button type="submit" class="w-full">Login</Button>
+						<Button type="submit" class="w-full">{ $loginFormType }</Button>
 					</div>
 					<div class="text-center text-sm">
-						Don&apos;t have an account?
-						<a href="##" class="underline underline-offset-4"> Sign up </a>
+						{ $accountVerb } have an account?
+						<a href="##" onclick={toggleFormType} class="underline underline-offset-4"> { $loginFormAction } </a>
 					</div>
 				</div>
 			</form>
