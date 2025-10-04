@@ -1,9 +1,20 @@
 <script lang="ts">
     import Button from "$lib/components/ui/button/button.svelte";
-    import { goto } from "$app/navigation";
-    import { currentUser, authLoading } from "$lib/stores/auth.store";
+    import { goto, invalidateAll } from "$app/navigation";
+    import { currentUser } from "$lib/stores/auth.store";
+    import { signOut } from "firebase/auth";
+    import { auth } from "$lib/firebase.auth";
 
     let data: JSON | undefined = $state();
+
+    async function logOut() {
+        try {
+            await signOut(auth);
+            window.location.href = '/';
+        } catch (error) {
+            console.error("Error on log out: ", error);
+        }
+    }
 
     // react to the change in auth state and use user access token to call API for some data.
     $effect(()=> {
@@ -22,12 +33,16 @@
 </script>
 
 <Button class='cursor-pointer'  onclick={() => { goto('/login') }}>
-    Login
+    Log In
 </Button>
 
-{#if $authLoading}
-  <p>Loading...</p>
-{:else if $currentUser}
+<Button class='cursor-pointer'  onclick={() => { 
+        logOut();
+    }}>
+    Log Out
+</Button>
+
+{#if $currentUser}
   <p>Hello {$currentUser.email}</p>
   <p>{ data?.message }</p>
 {:else}
