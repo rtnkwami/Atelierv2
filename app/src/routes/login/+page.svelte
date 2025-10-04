@@ -1,14 +1,18 @@
 <script lang="ts">
   import LoginForm from "$lib/components/auth-components/LoginForm.svelte";
   import GalleryVerticalEndIcon from "@lucide/svelte/icons/gallery-vertical-end";
-  import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+  import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signInWithPopup
+  } from 'firebase/auth';
   import { loginFormType } from "$lib/stores/auth.store";
-  import { auth } from "$lib/firebase.auth";
+  import { auth, provider } from "$lib/firebase.auth";
   import { currentUser } from "$lib/stores/auth.store";
   import { goto } from "$app/navigation";
 
   // Async/await is needed here because it's an external API call.
-  // The response must come before we can determine whether or not to route to the home page
+  // The response must be returned before we can determine whether or not to route to the home page
   // If no async/await, redirect will never happen
 
   async function signIn (email: string, password: string): Promise<void> {
@@ -20,6 +24,17 @@
 
   async function signUp (email: string, password: string): Promise<void> {
     await createUserWithEmailAndPassword(auth, email, password);
+    if ($currentUser) {
+      goto('/');
+    }
+  }
+
+  async function googleOAuth(): Promise<void> {
+    provider.addScope('profile');
+    provider.addScope('email');
+    const user = await signInWithPopup(auth, provider);
+    currentUser.set(user.user);
+
     if ($currentUser) {
       goto('/');
     }
@@ -38,9 +53,9 @@
       Atelier
     </a>
     {#if $loginFormType == "Log in"}
-        <LoginForm login={signIn} />
+        <LoginForm login={signIn} oAuth={googleOAuth} />
     {:else}
-        <LoginForm login={signUp} />
+        <LoginForm login={signUp} oAuth={googleOAuth} />
     {/if}
 
   </div>
