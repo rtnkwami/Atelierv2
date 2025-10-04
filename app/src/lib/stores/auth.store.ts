@@ -7,10 +7,12 @@ export const loginFormType = writable("Log in");
 export const accountVerb = writable("Don't");
 export const loginFormAction = writable("Sign Up");
 
-export let currentUser: Writable<User> = writable();
+export let currentUser: Writable<User | null> = writable(null);
+export let authLoading = writable(true)
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser.set(user);
+        authLoading.set(false);
     }
 })
