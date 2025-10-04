@@ -27,6 +27,9 @@ const configSchema = z.object({
             'db2',
             'oracle'
         ])
+    }),
+    auth: z.object({
+        projectId: z.string().nonempty()
     })
 });
 
@@ -43,6 +46,9 @@ const env = {
         host: process.env.DB_HOST || '',
         dialect: process.env.DB_DIALECT || '',
         url: process.env.DB_URL || '' // URL in case the db changes from a SQL db to another type
+    },
+    auth: {
+        projectId: process.env.FIREBASE_PROJECT_ID || ''
     }
 };
 
