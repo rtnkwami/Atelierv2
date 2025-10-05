@@ -8,6 +8,7 @@
     "paths": {
       "@config/*": ["config/*"],
       "@auth/*": ["modules/auth/*"],
+      "@auth/routes":  ["modules/auth/auth.routes.ts"],
       "@auth/models": ["modules/auth/models/index.ts"]
     }
   },
