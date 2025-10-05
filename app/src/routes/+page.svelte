@@ -1,11 +1,12 @@
 <script lang="ts">
     import Button from "$lib/components/ui/button/button.svelte";
-    import { goto, invalidateAll } from "$app/navigation";
+    import { goto } from "$app/navigation";
     import { currentUser } from "$lib/stores/auth.store";
     import { signOut } from "firebase/auth";
     import { auth } from "$lib/firebase.auth";
+    import { client } from "$lib/clients/sdk";
 
-    let data: JSON | undefined = $state();
+    let data = $state();
 
     async function logOut() {
         try {
@@ -21,13 +22,13 @@
         if (!$currentUser) return;
 
         (async () => {
-            const token = await $currentUser?.getIdToken();
-            const response = await fetch('http://localhost:5000/', {
-                headers: {
-                    Authorization: `Bearer ${ token }`
+            const token = await $currentUser.getIdToken();
+            const response = await client.auth.testAuth({
+                extraHeaders: {
+                    authorization: `Bearer ${ token }`
                 }
-            })
-            data = await response.json();
+            });
+            data = response.body.message;
         })();
     })
 </script>
@@ -44,7 +45,7 @@
 
 {#if $currentUser}
   <p>Hello {$currentUser.email}</p>
-  <p>{ data?.message }</p>
+  <p>{ data }</p>
 {:else}
   <p>Please log in</p>
 {/if}

@@ -43,6 +43,8 @@
 		"vite": "^7.0.4"
 	},
 	"dependencies": {
-		"firebase": "^12.3.0"
+		"@ts-rest/core": "^3.52.1",
+		"firebase": "^12.3.0",
+		"zod": "^3.25.76"
 	}
 }
