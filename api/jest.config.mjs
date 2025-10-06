@@ -91,6 +91,10 @@ const config = {
   // ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
+  
+  /** Purpose: Jest has issues resolving the custom paths created in tsconfig.json
+   * So, this moduleNameMapper exists to assist Jest in resolving these path names itself.
+   */
   moduleNameMapper: {
     "^@config/(.*)$": "<rootDir>/src/config/$1",
     "^@auth/routes$": "<rootDir>/src/modules/auth/auth.routes.ts",

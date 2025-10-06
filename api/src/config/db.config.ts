@@ -1,4 +1,4 @@
-import config from "../env.ts";
+import config from "../env";
 import { Sequelize } from "sequelize";
 
 /** Use database url in case db is switched to a third party database provider */

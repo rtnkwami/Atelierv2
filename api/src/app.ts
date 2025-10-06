@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { httpLogger } from '@config/logger.config.ts';
+import { httpLogger } from '@config/logger.config';
 import authRoutes from "@auth/routes";
 
 const app = express();
@@ -12,5 +12,9 @@ app.use(cors({
 }));
 
 app.use('/auth', authRoutes);
+
+app.get('/', (req, res) => {
+    res.json({ message: "Hello World!" });
+})
 
 export default app;

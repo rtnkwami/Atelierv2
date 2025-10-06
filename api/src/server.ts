@@ -1,7 +1,7 @@
-import app from "./app.ts";
-import config from "./env.ts";
-import logger from "./config/logger.config.ts";
-import { sequelize } from "@config/db.config.ts";
+import app from "./app";
+import config from "./env";
+import logger from "./config/logger.config";
+import { sequelize } from "@config/db.config";
 import 'database/schema.ts'
 
 async function startDb() {
