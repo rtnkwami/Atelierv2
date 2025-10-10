@@ -36,6 +36,10 @@
     // Recommended Options
     "strict": true,
     "jsx": "react-jsx",
+    
+    /** verbatimModuleSyntax is disabled because Jest wants TS files to be transpiled to commonjs
+     * instead of ESM modules. Disabling this TS config option prevents TS from complaining on 
+     * behalf of Jest. */
     "verbatimModuleSyntax": false,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,

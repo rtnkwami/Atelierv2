@@ -10,8 +10,9 @@
       "@auth/*": ["modules/auth/*"],
       "@auth/routes":  ["modules/auth/auth.routes"],
       "@auth/models": ["modules/auth/models/index"]
-    }
+    },
+    "types": ["@types/jest"]
   },
   "extends": "../tsconfig.base.json",
-  "include": ["src"]
+  "include": ["./src/**/*.ts"]
 }
