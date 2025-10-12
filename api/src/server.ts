@@ -1,13 +1,13 @@
 import app from "./app";
 import config from "./env";
 import logger from "./config/logger.config";
-import { sequelize } from "@config/db.config";
-import 'database/schema.ts'
+import { initializeDatabase } from "database/init";
+import { dbClient } from "@config/db.config";
 
 async function startDb() {
     try {
-        await sequelize.authenticate();
-        await sequelize.sync({ alter: true });
+        await dbClient.authenticate();
+        initializeDatabase(dbClient);
         logger.info("Database connection established");
     } catch (error) {
         logger.error(error, "Database error");
