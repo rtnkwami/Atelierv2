@@ -1,30 +1,39 @@
-import { sequelize } from "@config/db.config.ts";
-import { DataTypes, Model } from "sequelize";
-import type { Optional } from "sequelize";
+import { Model, DataTypes,
+    type CreationOptional,
+    type InferAttributes,
+    type InferCreationAttributes,
+    Sequelize, 
+} from 'sequelize';
 
-/** Purpose: PermissionAttributes and PermissionCreationAttributes exist within this file to inform
+/** Purpose: IPermissions exist within this file to inform
  * Typescript of the attributes needed to create a role. Useful for intellisense and type
  * checking
  */
 
-type PermissionAttributes = {
-    id: string,
-    name: string
+export interface IPermissions extends Model<InferAttributes<IPermissions>, InferCreationAttributes<IPermissions>> {
+    id: CreationOptional<string>;
+    name: string;
 }
 
-type PermissionCreationAttributes = Optional<PermissionAttributes, 'id'>
+/**
+ * Purpose: decouple sequelize client from database to allow for the permissions model
+ * to be initialised during testing with a test database.
+ * 
+ * @param sequelizeClient 
+ * @returns Permissions Model
+ */
 
-const Permissions = sequelize.define<Model<PermissionAttributes, PermissionCreationAttributes>>('Permissions', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
-    }
-},{ tableName: 'permissions' });
-
-export default Permissions;
+export function initPermissions(sequelizeClient: Sequelize) {
+    return sequelizeClient.define<IPermissions>('Permissions', {
+        id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true
+        },
+        name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true
+        }
+    }, { tableName: 'permissions' });
+}
