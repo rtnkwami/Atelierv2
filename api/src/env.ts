@@ -13,21 +13,7 @@ const configSchema = z.object({
         port: z.number().nonnegative()
     }),
     db: z.object({
-        url: z.string().optional(),
-        name: z.string().nonempty(),
-        user: z.string().nonempty(),
-        password: z.string().nonempty(),
-        host: z.string().nonempty(),
-        dialect: z.enum([
-            'mysql',
-            'postgres',
-            'sqlite',
-            'mariadb',
-            'mssql',
-            'db2',
-            'oracle'
-        ]),
-        port: z.number().nonnegative()
+        url: z.string(),
     }),
     auth: z.object({
         projectId: z.string().nonempty()
@@ -38,16 +24,10 @@ type Config = z.infer<typeof configSchema>
 
 const env = {
     api: {
-        port: Number(process.env.PORT)
+        port: Number(process.env.API_PORT)
     },
     db: {
-        name: process.env.DB_NAME || '',
-        user: process.env.DB_USER || '',
-        password: process.env.DB_PASSWORD || '',
-        host: process.env.DB_HOST || '',
-        dialect: process.env.DB_DIALECT || '',
-        url: process.env.DB_URL || '', // URL in case the db changes from a SQL db to another type
-        port: Number(process.env.DB_PORT)
+        url: process.env.DB_URL || ''
     },
     auth: {
         projectId: process.env.FIREBASE_PROJECT_ID || ''
