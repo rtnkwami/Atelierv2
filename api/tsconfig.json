@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "./dist",
     "baseUrl": "src",
     "allowImportingTsExtensions": true,
@@ -14,5 +14,5 @@
     "types": ["@types/jest"]
   },
   "extends": "../tsconfig.base.json",
-  "include": ["./src/**/*.ts"]
+  "include": ["./src/**/*.ts", "prisma.config.ts"]
 }
