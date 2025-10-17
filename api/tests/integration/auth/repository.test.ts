@@ -54,6 +54,24 @@ describe('Permissions Handler', () => {
             expect(permissions).toHaveLength(1);
             expect(permissions[0].name).toBe('permissions:delete');
         });
-        
+
+        test('should list all permissions with names matching provided filter', async () => {
+            await authRepo.permissions.create("permissions:create");
+            await authRepo.permissions.create("permissions:update");
+            await authRepo.permissions.create("permissions:delete");
+            await authRepo.permissions.create("roles:delete");
+            await authRepo.permissions.create("roles:update");
+
+            let result;
+
+            result = await authRepo.permissions.list('roles');
+            expect(result.permissionsCount).toBe(2);
+
+            result = await authRepo.permissions.list('permissions');
+            expect(result.permissionsCount).toBe(3);
+
+            result = await authRepo.permissions.list(':delete');
+            expect(result.permissionsCount).toBe(2);
+        });
     });
 });
