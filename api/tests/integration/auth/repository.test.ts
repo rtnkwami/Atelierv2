@@ -39,4 +39,15 @@ describe('Permissions Handler', () => {
 
         expect(result.permissions).toHaveLength(2);
     });
+
+    test('should list all permissions given a full permission name', async () => {
+        await authRepo.permissions.create("permissions:create");
+        await authRepo.permissions.create("permissions:update");
+        await authRepo.permissions.create("permissions:delete");
+
+        const { permissions } = await authRepo.permissions.list('permissions:delete');
+
+        expect(permissions).toHaveLength(1);
+        expect(permissions[0].name).toBe('permissions:delete');
+    });
 });
