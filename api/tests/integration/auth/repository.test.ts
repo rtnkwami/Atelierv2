@@ -25,5 +25,18 @@ describe('Permissions Handler', () => {
         expect(createdPermission).toHaveProperty('updatedAt');
     });
 
-    
+    test('should list all permissions if no filter is given', async () => {
+        await authRepo.permissions.create("roles:delete");
+        await authRepo.permissions.create("roles:update");
+        
+        const result = await authRepo.permissions.list();
+        
+        expect(result).toHaveProperty('permissions');
+        expect(result).toHaveProperty('permissionsCount');
+        expect(result).toHaveProperty('totalPages');
+        expect(result).toHaveProperty('page');
+        expect(result).toHaveProperty('limit');
+
+        expect(result.permissions).toHaveLength(2);
+    });
 });
