@@ -8,6 +8,8 @@ node_modules
 .wrangler
 .svelte-kit
 /build
+coverage
+prisma-client
 
 # OS
 .DS_Store

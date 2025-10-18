@@ -4,26 +4,37 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --coverage",
     "start": "npx tsx watch src/server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
+    "@prisma/client": "^6.17.1",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "firebase-admin": "^13.5.0",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "pino": "^9.11.0",
     "pino-http": "^10.5.0",
-    "sequelize": "^6.37.7",
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.2.0",
     "pino-pretty": "^13.1.1",
-    "tsx": "^4.20.6"
+    "prisma": "^6.17.1",
+    "sequelize-cli": "^6.6.3",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.4",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   }
 }
