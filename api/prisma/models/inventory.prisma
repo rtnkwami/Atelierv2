@@ -1,12 +1,14 @@
 model Products {
-    id                  String         @id  @default(uuid()) @db.Uuid
-    name                String         
-    short_description   String
-    long_description    String
-    category            String         
-    price               Float
-    stock               Int
-    images              String[]
-    createdAt       DateTime       @default(now())
-    updatedAt       DateTime       @updatedAt
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String
+  short_description String
+  long_description  String
+  category          String
+  price             Float
+  stock             Int
+  images            String[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  Shops             Shops?   @relation(fields: [shopsId], references: [id])
+  shopsId           String?  @db.Uuid
 }
