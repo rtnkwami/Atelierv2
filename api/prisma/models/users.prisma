@@ -1,7 +1,7 @@
 model Users {
-    id                  String         @id
-    name                String
-    email               String
-    profile_pic_url     String
-    roles               Roles[]
+  id              String  @id
+  name            String
+  email           String
+  profile_pic_url String
+  roles           Roles[]
 }
