@@ -12,4 +12,5 @@ model Products {
   Shops             Shops?          @relation(fields: [shopsId], references: [id])
   shopsId           String?         @db.Uuid
   OrderProducts     OrderProducts[]
+  ProductViews      ProductViews[]
 }

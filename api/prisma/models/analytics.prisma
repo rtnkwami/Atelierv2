@@ -1,0 +1,7 @@
+model ProductViews {
+  products  Products @relation(fields: [productId], references: [id])
+  productId String   @db.Uuid
+  viewedAt  DateTime
+
+  @@id([productId, viewedAt])
+}
