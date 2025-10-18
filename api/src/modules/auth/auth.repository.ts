@@ -1,8 +1,8 @@
 import type { Permissions, PrismaClient } from "../../../prisma-client/client";
-import { z } from 'zod';
+// import { z } from 'zod';
 import logger from "@config/logger.config";
 
-const permissionSchema = z.string().regex(/^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$/);
+// const permissionSchema = z.string().regex(/^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$/);
 
 
 export interface IAuthRepository {
@@ -27,15 +27,13 @@ export const createAuthRepository = (prisma: PrismaClient): IAuthRepository => (
     permissions: {
         create: async (permission) => {
             try {
-                const parsedPermission = permissionSchema.parse(permission);
-
                 const newPermission = await prisma.permissions.create({
                     data: {
-                        name: parsedPermission
+                        name: permission
                     }
                 });
                 
-                authRepoLogger.info(`Permission "${ newPermission.name } created"`);
+                authRepoLogger.info(`Permission "${ newPermission.name }" created`);
                 return newPermission;
 
             } catch (error) {
