@@ -1,16 +1,16 @@
 model Roles {
-    id              String         @id  @default(uuid()) @db.Uuid
-    name            String         @unique
-    createdAt       DateTime       @default(now())
-    updatedAt       DateTime       @updatedAt
-    permissions     Permissions[]
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  permissions Permissions[]
+  users       Users[] // see users.prisma
 }
 
 model Permissions {
-    id              String         @id @default(uuid()) @db.Uuid
-    name            String         @unique
-    createdAt       DateTime       @default(now())
-    updatedAt       DateTime       @updatedAt
-    roles           Roles[]
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  roles     Roles[]
 }
-

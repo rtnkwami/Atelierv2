@@ -1,0 +1,6 @@
+model Shops {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  products    Products[]
+}
