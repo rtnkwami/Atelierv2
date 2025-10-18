@@ -1,0 +1,23 @@
+model Orders {
+  id       String          @id @default(uuid()) @db.Uuid
+  status   Status          @default(pending)
+  total    Float
+  products OrderProducts[]
+}
+
+model OrderProducts {
+  orders      Orders   @relation(fields: [orderId], references: [id])
+  orderId     String   @db.Uuid
+  products    Products @relation(fields: [productId], references: [id])
+  productId   String   @db.Uuid
+  quantity    Int
+  priceAtTime Float
+
+  @@id([orderId, productId])
+}
+
+enum Status {
+  pending
+  completed
+  cancelled
+}
