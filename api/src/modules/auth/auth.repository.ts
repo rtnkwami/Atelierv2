@@ -1,13 +1,13 @@
 import type { Permissions, PrismaClient } from "../../../prisma-client/client";
 import { z } from 'zod';
+import logger from "@config/logger.config";
 
-const permissionRegex = z.string().regex(/^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$/);
-type PermissionFilter = z.infer<typeof permissionRegex>;
+const permissionSchema = z.string().regex(/^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$/);
 
-export type IAuthRepository = {
+
+export interface IAuthRepository {
     permissions: {
-        create: (permission: PermissionFilter) => Promise<Permissions>;
-        
+        create: (permission: string) => Promise<Permissions>;
         list: (filter?: string, pagination?: {
             page: number,
             limit: number
@@ -21,44 +21,61 @@ export type IAuthRepository = {
     }
 }
 
+const authRepoLogger = logger.child({ module: 'auth', layer: 'repository' });
+
 export const createAuthRepository = (prisma: PrismaClient): IAuthRepository => ({
     permissions: {
         create: async (permission) => {
-            const newPermission = await prisma.permissions.create({
-                data: {
-                    name: permission
-                }
-            });
+            try {
+                const parsedPermission = permissionSchema.parse(permission);
 
-            return newPermission;
+                const newPermission = await prisma.permissions.create({
+                    data: {
+                        name: parsedPermission
+                    }
+                });
+                
+                authRepoLogger.info(`Permission "${ newPermission.name } created"`);
+                return newPermission;
+
+            } catch (error) {
+                authRepoLogger.error({ error }, 'Database Error');
+                throw error;
+            }
         },
 
         list: async (filter, pagination = { page: 1, limit: 20 }) => {            
-            const where = filter
-                ? {
-                    name: {
-                    contains: filter,
-                    mode: 'insensitive' as const,
-                    },
-                }
-                : {};
+            try {
+                const where = filter
+                    ? {
+                        name: {
+                        contains: filter,
+                        mode: 'insensitive' as const,
+                        },
+                    }
+                    : {};
+    
+                const [permissions, permissionsCount] = await prisma.$transaction([
+                    prisma.permissions.findMany({
+                        where,
+                        skip: (pagination.page - 1) * pagination.limit,
+                        take: pagination.limit,
+                    }),
+                    prisma.permissions.count({ where }),
+                ]);
+    
+                return {
+                    permissions,
+                    page: pagination.page,
+                    limit: pagination.limit,
+                    permissionsCount,
+                    totalPages: Math.ceil(permissionsCount / pagination.limit),
+                };
 
-            const [permissions, permissionsCount] = await prisma.$transaction([
-                prisma.permissions.findMany({
-                    where,
-                    skip: (pagination.page - 1) * pagination.limit,
-                    take: pagination.limit,
-                }),
-                prisma.permissions.count({ where }),
-            ]);
-
-            return {
-                permissions,
-                page: pagination.page,
-                limit: pagination.limit,
-                permissionsCount,
-                totalPages: Math.ceil(permissionsCount / pagination.limit),
-            };
+            } catch (error) {
+                authRepoLogger.error({ error }, "Database Error");
+                throw error;
+            }
         },
     }
 });
