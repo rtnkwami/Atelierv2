@@ -104,5 +104,13 @@ describe('Permission Management', () => {
             
             expect(deletedPermission.name).toBe('shops:create');
         });
+
+        test('should throw a delete error given nonexistent id', async () => {
+            const invalidPermissionId = "123e4567-e89b-12d3-a456-426614174000";
+            
+            await expect(
+                authRepo.permissions.delete(invalidPermissionId)
+            ).rejects.toThrow(`Permission with id "${ invalidPermissionId} does not exist"`);
+        });
     });
 });
