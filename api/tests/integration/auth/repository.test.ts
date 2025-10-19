@@ -96,4 +96,13 @@ describe('Permission Management', () => {
             ).rejects.toThrow(`Permission with id: ${ nonexistentPermissionId } does not exist`);
         });
     });
+
+    describe('Deleting Permissions', () => {
+        test('should delete a permission', async () => {
+            const permissionToDelete = await authRepo.permissions.create('shops:create');
+            const deletedPermission = await authRepo.permissions.delete(permissionToDelete.id);
+            
+            expect(deletedPermission.name).toBe('shops:create');
+        });
+    });
 });
