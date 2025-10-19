@@ -73,5 +73,16 @@ describe('Permissions Handler', () => {
             result = await authRepo.permissions.list({ name: ':delete' });
             expect(result.permissionsCount).toBe(2);
         });
+
+        test('should update a permission given a permission id', async () => {
+            const permission = await authRepo.permissions.create("roles:create");
+
+            const updatedPermission = await authRepo.permissions.update(
+                permission.id, "permissions:create"
+            );
+
+            expect(updatedPermission.name).toBe("permissions:create")
+        });
+
     });
 });
