@@ -22,6 +22,7 @@ export interface IAuthRepository {
             totalPages: number,
             permissionsCount: number
         }>;
+        update: (permissionId: string, updateInput:string) => Promise<Permissions>;
     }
 }
 
@@ -78,5 +79,43 @@ export const createAuthRepository = (prisma: PrismaClient): IAuthRepository => (
                 authRepoLogger.error({ error }, "Database Error");
                 throw error;
             }
-        }  }
+        },
+
+        update: async (permissionId, updateInput) => {
+            try {
+                /** Purpose: database transaction is here to prevent a vulnerability where
+                 * permission is read before deletion.
+                 * 
+                 * This code ensures that the updated permission cannot be read while or before
+                 * it is being deleted due to async actions.
+                 */
+                const updatedPermission = prisma.$transaction(async (tx) => {
+                    const oldPermission = await tx.permissions.findUnique({ 
+                            where: { id: permissionId } 
+                        });
+
+                    if (!oldPermission){ 
+                        throw new Error(`Permission with id: ${ permissionId } does not exist`)
+                    }
+
+                    const updatedPermission = await tx.permissions.update({ 
+                        where: { id: permissionId },
+                        data: { name: updateInput }
+                    });
+    
+                    authRepoLogger.info(
+                        `Permission "${ oldPermission.name }" changed to "${ updatedPermission.name }"`
+                    );
+
+                    return updatedPermission;
+                });
+
+                return updatedPermission;
+                 
+            } catch (error) {
+                authRepoLogger.info({ error }, 'Failed to update permission');
+                throw error;
+            }
+        }
+    }
 });
