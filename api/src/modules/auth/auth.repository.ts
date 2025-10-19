@@ -23,6 +23,7 @@ export interface IAuthRepository {
             permissionsCount: number
         }>;
         update: (permissionId: string, updateInput:string) => Promise<Permissions>;
+        delete: (permissionId: string) => Promise<Permissions>;
     }
 }
 
@@ -114,6 +115,23 @@ export const createAuthRepository = (prisma: PrismaClient): IAuthRepository => (
                  
             } catch (error) {
                 authRepoLogger.info({ error }, 'Failed to update permission');
+                throw error;
+            }
+        },
+
+        delete: async (permissionId) => {
+            try {
+                const deletedPermission = await prisma.permissions.delete({ 
+                    where: {
+                        id: permissionId
+                    }
+                 });
+
+                 authRepoLogger.info(`Permission "${ deletedPermission.name }" deleted`)
+
+                 return deletedPermission;
+            } catch (error) {
+                authRepoLogger.error({ error }, 'Failed to delete permission');
                 throw error;
             }
         }
