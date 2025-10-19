@@ -4,7 +4,7 @@ import { prisma } from '../../../src/config/db.config';
 import { createAuthRepository } from '../../../src/modules/auth/auth.repository';
 
 
-describe('Permissions Handler', () => {
+describe('Permission Management', () => {
     const authRepo = createAuthRepository(prisma);
 
     beforeAll(async () => {
@@ -15,7 +15,7 @@ describe('Permissions Handler', () => {
         await prisma.$queryRaw`TRUNCATE TABLE "Permissions" CASCADE;`
     });
 
-    describe('permission creation', () => {
+    describe('Creating Permissions', () => {
         test('should create a permission', async () => {
             const createdPermission = await authRepo.permissions.create("roles:create");
             expect(createdPermission.name).toBe("roles:create");
@@ -28,7 +28,7 @@ describe('Permissions Handler', () => {
     });
 
 
-    describe('permission listing', () => {
+    describe('Searching for Permissions', () => {
         test('should list all permissions if no filter is given', async () => {
             await authRepo.permissions.create("roles:delete");
             await authRepo.permissions.create("roles:update");
@@ -73,7 +73,9 @@ describe('Permissions Handler', () => {
             result = await authRepo.permissions.list({ name: ':delete' });
             expect(result.permissionsCount).toBe(2);
         });
+    });
 
+    describe('Updating Permissions', () => {
         test('should update a permission given a permission id', async () => {
             const permission = await authRepo.permissions.create("roles:create");
 
@@ -84,5 +86,14 @@ describe('Permissions Handler', () => {
             expect(updatedPermission.name).toBe("permissions:create")
         });
 
+        test('should throw an update error given nonexistent id', async () => {
+            const nonexistentPermissionId = '123e4567-e89b-12d3-a456-426614174000'
+            
+            await expect(
+                authRepo.permissions.update(
+                nonexistentPermissionId, 'invalid:permission'
+                )
+            ).rejects.toThrow(`Permission with id: ${ nonexistentPermissionId } does not exist`);
+        });
     });
 });
