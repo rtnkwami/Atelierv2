@@ -120,19 +120,19 @@ export const createAuthRepository = (prisma: PrismaClient): IAuthRepository => (
         },
 
         delete: async (permissionId) => {
-            try {
-                const deletedPermission = await prisma.permissions.delete({ 
-                    where: {
-                        id: permissionId
-                    }
-                 });
+            try {                
+                const deletedPermission =  await prisma.permissions.delete({
+                        where: {
+                            id: permissionId
+                        }
+                    });
 
                  authRepoLogger.info(`Permission "${ deletedPermission.name }" deleted`)
 
                  return deletedPermission;
             } catch (error) {
                 authRepoLogger.error({ error }, 'Failed to delete permission');
-                throw error;
+                throw new Error(`Permission with id "${ permissionId } does not exist"`);
             }
         }
     }
