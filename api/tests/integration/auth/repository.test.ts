@@ -49,7 +49,7 @@ describe('Permissions Handler', () => {
             await authRepo.permissions.create("permissions:update");
             await authRepo.permissions.create("permissions:delete");
     
-            const { permissions } = await authRepo.permissions.list('permissions:delete');
+            const { permissions } = await authRepo.permissions.list({ name: 'permissions:delete' });
     
             expect(permissions).toHaveLength(1);
             expect(permissions[0].name).toBe('permissions:delete');
@@ -64,13 +64,13 @@ describe('Permissions Handler', () => {
 
             let result;
 
-            result = await authRepo.permissions.list('roles');
+            result = await authRepo.permissions.list({ name: 'roles'});
             expect(result.permissionsCount).toBe(2);
 
-            result = await authRepo.permissions.list('permissions');
+            result = await authRepo.permissions.list({ name: 'permissions' });
             expect(result.permissionsCount).toBe(3);
 
-            result = await authRepo.permissions.list(':delete');
+            result = await authRepo.permissions.list({ name: ':delete' });
             expect(result.permissionsCount).toBe(2);
         });
     });

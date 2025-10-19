@@ -1,6 +1,7 @@
 import type { Permissions, PrismaClient } from "../../../prisma-client/client";
 // import { z } from 'zod';
 import logger from "@config/logger.config";
+import { PermissionsWhereInput } from "../../../prisma-client/models";
 
 // const permissionSchema = z.string().regex(/^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$/);
 
@@ -8,7 +9,10 @@ import logger from "@config/logger.config";
 export interface IAuthRepository {
     permissions: {
         create: (permission: string) => Promise<Permissions>;
-        list: (filter?: string, pagination?: {
+        list: (filter?: {
+            name?: string,
+            id?: string
+        }, pagination?: {
             page: number,
             limit: number
         }) => Promise<{
@@ -37,21 +41,21 @@ export const createAuthRepository = (prisma: PrismaClient): IAuthRepository => (
                 return newPermission;
 
             } catch (error) {
-                authRepoLogger.error({ error }, 'Database Error');
+                authRepoLogger.error({ error }, 'Failed to create permission');
                 throw error;
             }
         },
 
         list: async (filter, pagination = { page: 1, limit: 20 }) => {            
             try {
-                const where = filter
-                    ? {
-                        name: {
-                        contains: filter,
-                        mode: 'insensitive' as const,
-                        },
+                const where: PermissionsWhereInput  = { };
+                if (filter?.id) { where.id = filter.id };
+                if (filter?.name) { 
+                    where.name =  {
+                        contains: filter.name,
+                        mode: 'insensitive'
                     }
-                    : {};
+                }
     
                 const [permissions, permissionsCount] = await prisma.$transaction([
                     prisma.permissions.findMany({
@@ -74,6 +78,5 @@ export const createAuthRepository = (prisma: PrismaClient): IAuthRepository => (
                 authRepoLogger.error({ error }, "Database Error");
                 throw error;
             }
-        },
-    }
+        }  }
 });
