@@ -1,9 +1,6 @@
 import type { Permissions, PrismaClient } from "../../../prisma-client/client";
-// import { z } from 'zod';
 import logger from "@config/logger.config";
 import { PermissionsWhereInput } from "../../../prisma-client/models";
-
-// const permissionSchema = z.string().regex(/^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$/);
 
 
 export interface IAuthRepository {

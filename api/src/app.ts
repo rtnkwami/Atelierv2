@@ -1,20 +1,38 @@
 import express from 'express';
 import cors from 'cors';
 import { httpLogger } from '@config/logger.config';
-import authRoutes from "@auth/routes";
+import { prisma } from '@config/db.config';
 
-const app = express();
+import { createAuthRouter } from '@auth/routes';
+import { createAuthRepository } from '@auth/auth.repository';
+import { createAuthController } from '@auth/auth.controller';
 
-app.use(httpLogger);
-app.use(express.json());
-app.use(cors({
-    origin: 'http://localhost:5173'
-}));
+export function createApp (dependencies: {
+    authRouter: ReturnType<typeof createAuthRouter>
+}) {
+    const app = express();
 
-app.use('/auth', authRoutes);
+    app.use(httpLogger);
+    app.use(express.json());
+    app.use(cors({
+        origin: 'http://localhost:5173'
+    }));
 
-app.get('/', (req, res) => {
-    res.json({ message: "Hello World!" });
-})
+    app.use('/auth', dependencies.authRouter);
 
-export default app;
+    app.get('/', (req, res) => {
+        res.json({ message: "Hello World!" });
+    })
+
+    return app;
+}
+
+
+
+// Dependency Injection
+//-------------------------------------------
+// Auth DI
+const authRepo = createAuthRepository(prisma);
+const authController = createAuthController(authRepo);
+const authRouter = createAuthRouter(authController);
+export default createApp({ authRouter });

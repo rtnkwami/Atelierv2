@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { IAuthRepository } from "./auth.repository";
 import logger from "@config/logger.config";
 
-interface IAuthController {
+export interface IAuthController {
     permissions: {
         create: (req: Request, res: Response) => Promise<Response>;
         // list: (req: Request, res: Response) => Promise<Response>;
