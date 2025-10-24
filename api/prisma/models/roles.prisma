@@ -1,0 +1,5 @@
+model Roles {
+  id    String  @id @default(uuid()) @db.Uuid
+  name  String  @unique
+  users Users[]
+}
