@@ -11,6 +11,8 @@
       "@auth/routes":  ["modules/auth/auth.routes"],
       "@auth/models": ["modules/auth/models/index"]
     },
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
     "types": ["@types/jest"]
   },
   "extends": "../tsconfig.base.json",
