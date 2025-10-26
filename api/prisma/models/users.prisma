@@ -2,6 +2,6 @@ model Users {
   id              String  @id @default(uuid()) @db.Uuid
   name            String
   email           String
-  profile_pic_url String
+  avatar          String
   roles           Roles[]
 }
