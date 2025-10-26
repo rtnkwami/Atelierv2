@@ -27,10 +27,10 @@ const env = {
         port: Number(process.env.API_PORT)
     },
     db: {
-        url: process.env.DB_URL || ''
+        url: process.env.DATABASE_URL
     },
     auth: {
-        projectId: process.env.FIREBASE_PROJECT_ID || ''
+        projectId: process.env.FIREBASE_PROJECT_ID
     }
 };
 
