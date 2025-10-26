@@ -1,19 +1,22 @@
 import { Router } from "express";
-// import { verifyJwt } from "../../middleware/verifyJwt";
-import {IAuthController } from "./auth.controller";
-import { validate } from "../../utils/validateRequest";
-import authSchema from "./validation/auth.validation";
+import { verifyJwt } from "../../middleware/verifyJwt";
+import { IAuthController } from "./auth.controller";
+// import { validate } from "../../utils/validateRequest";
+// import authSchema from "./validation/auth.validation";
 
-export function createAuthRouter(authController: IAuthController) {
+type dependencies = {
+    authController: IAuthController
+}
+
+export function createAuthRouter({ authController }: dependencies) {
     const router = Router();
     
     // router.use(verifyJwt);
-    
-    router.post('/permissions',
-        validate(authSchema.createPermissionSchema),
-        authController.permissions.create
-    );
-    
+
+    router.get('/register',
+        verifyJwt,
+        authController.register
+    )
     // // router.post('/permissions')
     // // router.get('/permissions/:id');
     // // router.put('/permissions/:id');
