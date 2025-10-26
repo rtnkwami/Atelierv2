@@ -1,27 +1,25 @@
-import express from 'express';
+import express, { type Router } from 'express';
 import cors from 'cors';
 import { httpLogger } from '@config/logger.config';
-import { prisma } from '@config/db.config';
+import container from 'dependencyInjection';
 
-import { createAuthRouter } from '@auth/routes';
-import { createAuthRepository } from '@auth/auth.repository';
-import { createAuthController } from '@auth/auth.controller';
+type dependencies = {
+    authRouter: Router
+}
 
-export function createApp (dependencies: {
-    authRouter: ReturnType<typeof createAuthRouter>
-}) {
+export function createApp ({ authRouter }: dependencies) {
     const app = express();
 
-    app.use(httpLogger);
+    // app.use(httpLogger);
     app.use(express.json());
     app.use(cors({
         origin: 'http://localhost:5173'
     }));
 
-    app.use('/auth', dependencies.authRouter);
+    app.use('/auth', authRouter);
 
-    app.get('/', (req, res) => {
-        res.json({ message: "Hello World!" });
+    app.get('/health', (req, res) => {
+        res.status(200).json({ message: "API is healthy." });
     })
 
     return app;
@@ -32,7 +30,6 @@ export function createApp (dependencies: {
 // Dependency Injection
 //-------------------------------------------
 // Auth DI
-const authRepo = createAuthRepository(prisma);
-const authController = createAuthController(authRepo);
-const authRouter = createAuthRouter(authController);
-export default createApp({ authRouter });
+const api = container.resolve('app');
+
+export default api;
