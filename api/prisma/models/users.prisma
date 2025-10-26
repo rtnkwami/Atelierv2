@@ -1,5 +1,5 @@
 model Users {
-  id              String  @id @default(uuid()) @db.Uuid
+  id              String  @id
   name            String
   email           String
   avatar          String
