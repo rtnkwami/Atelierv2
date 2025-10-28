@@ -1,11 +1,11 @@
-import { NotFoundError } from "../../error";
+import { DatabaseError, NotFoundError } from "../../error";
 import { PrismaClient } from "../../../prisma-client/client";
 import { UsersCreateInput } from "../../../prisma-client/models";
 import type { Users } from "../../../prisma-client/client";
 import Task, { tryOrElse } from "true-myth/task";
 
 export interface IUserRepository {
-    createUser: (userData: UsersCreateInput) => Promise<Users>;
+    createUser: (userData: UsersCreateInput) => Task<Users, DatabaseError>;
     getUser: (userId: string) => Task<Users, NotFoundError>;
 }
 
@@ -13,12 +13,7 @@ type dependencies = {
     db: PrismaClient
 }
 
-export const createUserRepository = ({ db }: dependencies): IUserRepository => ({
-    createUser: async (userData) => {
-        const newUser = await db.users.create({ data: userData });
-        return newUser;     
-    },
-    
+export const createUserRepository = ({ db }: dependencies): IUserRepository => ({    
     getUser: (userId) =>
         tryOrElse(
             (reason) => {
@@ -37,5 +32,28 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 }
                 return user;
             }
-        )
+        ),
+        createUser: (userData) =>
+            tryOrElse(
+                (reason) => new DatabaseError('Error creating database', { cause: reason }),
+                async () => {
+                    const newUser = await db.users.create({
+                        data: {
+                            id: userData.id,
+                            name: userData.name,
+                            email: userData.email,
+                            avatar: userData.avatar,
+                            roles: {
+                                connect: {
+                                    name: 'buyer'
+                                }
+                            }
+                        },
+                        include: {
+                            roles: true
+                        }
+                    });
+                    return newUser;
+                }
+            )
 });
