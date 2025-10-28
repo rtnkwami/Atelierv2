@@ -1,16 +1,16 @@
 import express, { type Router } from 'express';
 import cors from 'cors';
-import { httpLogger } from '@config/logger.config';
-import container from 'dependencyInjection';
+import { HttpLogger } from 'pino-http';
 
 type dependencies = {
-    authRouter: Router
+    authRouter: Router,
+    httpLogger: HttpLogger
 }
 
-export function createApp ({ authRouter }: dependencies) {
+export default function createAPI ({ authRouter, httpLogger }: dependencies) {
     const app = express();
 
-    // app.use(httpLogger);
+    app.use(httpLogger);
     app.use(express.json());
     app.use(cors({
         origin: 'http://localhost:5173'
@@ -18,18 +18,9 @@ export function createApp ({ authRouter }: dependencies) {
 
     app.use('/auth', authRouter);
 
-    app.get('/health', (req, res) => {
+    app.get('/health', (_, res) => {
         res.status(200).json({ message: "API is healthy." });
     })
 
     return app;
-}
-
-
-
-// Dependency Injection
-//-------------------------------------------
-// Auth DI
-const api = container.resolve('app');
-
-export default api;
+};
