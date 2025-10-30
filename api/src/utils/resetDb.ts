@@ -1,8 +1,7 @@
-import { AwilixContainer } from "awilix";
-import { PrismaClient } from "../../prisma-client/client.ts";
+import createDiContainer from "di.ts";
 
-export default async function resetDb(container: AwilixContainer) {
-    const prisma: PrismaClient = container.resolve('db');
+export default async function resetDb(container: ReturnType<typeof createDiContainer>) {
+    const prisma = container.resolve('db');
     await prisma.$transaction([
         prisma.users.deleteMany()
     ]);
