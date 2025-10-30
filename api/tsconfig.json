@@ -7,13 +7,13 @@
     "noEmit": true,
     "paths": {
       "@config/*": ["config/*"],
+      "@utils/*": ["utils/*"],
       "@auth/*": ["modules/auth/*"],
       "@auth/routes":  ["modules/auth/auth.routes"],
       "@auth/models": ["modules/auth/models/index"]
     },
     "moduleResolution": "nodenext",
     "module": "nodenext",
-    "types": ["@types/jest"]
   },
   "extends": "../tsconfig.base.json",
   "include": ["./src/**/*.ts", "prisma.config.ts"]
