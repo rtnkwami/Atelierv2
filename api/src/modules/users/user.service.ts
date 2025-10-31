@@ -1,13 +1,13 @@
 import { IUserRepository } from "./user.repository.ts"
 import { Users }from "../../../prisma-client/client.ts";
-import { NotFoundError, ServiceError } from "error.ts";
+import { NotFoundError, UserSyncError } from "error.ts";
 import Task, { tryOrElse } from "true-myth/task";
 import { Logger } from "pino";
 import { DecodedIdToken } from "firebase-admin/auth";
 
 
  export interface IUserService {
-    getOrCreateUser: (userData: DecodedIdToken) => Task<Users, ServiceError>;
+    getOrCreateUser: (userData: DecodedIdToken) => Task<Users, UserSyncError>;
     // upgradeUserToSeller: (userId: string) => Task<Users, ServiceError>;
 }
 
@@ -25,7 +25,7 @@ export const createUserService = ({ userRepo, baseLogger }: dependencies): IUser
             tryOrElse(
                 (reason) => {
                     userServiceLogger.error({ error: reason }, 'Error syncing user');
-                    return new ServiceError('Error syncing user', { cause: reason })
+                    return new UserSyncError('Error syncing user', { cause: reason })
                 },
                 async () => {
                     const createUserDto: Users = {
