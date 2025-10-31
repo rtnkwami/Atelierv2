@@ -47,7 +47,9 @@ export const createUserService = ({ userRepo, baseLogger }: dependencies): IUser
                         if (createUserTask.isErr) {
                             throw createUserTask.error;
                         }
-                        return createUserTask.value;
+                        const user = createUserTask.value
+                        userServiceLogger.info(`User ${ user.id } created`);
+                        return user;
                     }
                     throw getUserTask.error;
                 }
