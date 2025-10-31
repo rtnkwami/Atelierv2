@@ -3,11 +3,11 @@ import cors from 'cors';
 import { HttpLogger } from 'pino-http';
 
 type dependencies = {
-    authRouter: Router,
+    userRouter: Router,
     httpLogger: HttpLogger
 }
 
-export default function createAPI ({ authRouter, httpLogger }: dependencies) {
+export default function createAPI ({ userRouter, httpLogger }: dependencies) {
     const app = express();
 
     app.use(httpLogger);
@@ -16,7 +16,7 @@ export default function createAPI ({ authRouter, httpLogger }: dependencies) {
         origin: 'http://localhost:5173'
     }));
 
-    app.use('/auth', authRouter);
+    app.use('/auth', userRouter);
 
     app.get('/health', (_, res) => {
         res.status(200).json({ message: "API is healthy." });
