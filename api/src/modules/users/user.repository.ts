@@ -1,12 +1,12 @@
-import { DatabaseError, NotFoundError } from "../../error";
-import { PrismaClient } from "../../../prisma-client/client";
-import { UsersCreateInput } from "../../../prisma-client/models";
-import type { Users } from "../../../prisma-client/client";
+import { DatabaseError, NotFoundError } from "../../error.ts";
+import { PrismaClient } from "../../../prisma-client/client.ts";
+import { UsersCreateInput } from "../../../prisma-client/models.ts";
+import type { Users } from "../../../prisma-client/client.ts";
 import Task, { tryOrElse } from "true-myth/task";
 
 export interface IUserRepository {
     createUser: (userData: UsersCreateInput) => Task<Users, DatabaseError>;
-    getUser: (userId: string) => Task<Users, NotFoundError>;
+    getUser: (userId: string) => Task<Users, NotFoundError | Error>;
 }
 
 type dependencies = {

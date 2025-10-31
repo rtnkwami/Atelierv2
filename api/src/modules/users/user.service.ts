@@ -1,36 +1,56 @@
-import { IUserRepository } from "./user.repository"
-import { Users }from "../../../prisma-client/client";
-import logger from "@config/logger.config";
-import { NotFoundError } from "error";
+import { IUserRepository } from "./user.repository.ts"
+import { Users }from "../../../prisma-client/client.ts";
+import { NotFoundError, ServiceError } from "error.ts";
+import Task, { tryOrElse } from "true-myth/task";
+import { Logger } from "pino";
+import { DecodedIdToken } from "firebase-admin/auth";
 
 
-export interface IUserService {
-    getOrCreateUser: (userData: Users) => Promise<Users>;
+ export interface IUserService {
+    getOrCreateUser: (userData: DecodedIdToken) => Task<Users, ServiceError>;
+    // upgradeUserToSeller: (userId: string) => Task<Users, ServiceError>;
 }
 
 type dependencies = {
-    userRepo: IUserRepository
+    userRepo: IUserRepository;
+    baseLogger: Logger;
 }
 
-const userServiceLogger = logger.child({ module: 'users', layer: 'service' });
 
-export const createUserService = ({ userRepo }: dependencies): IUserService => ({
-    getOrCreateUser: async (userData) => {
-        const task = await userRepo.getUser(userData.id);
+export const createUserService = ({ userRepo, baseLogger }: dependencies): IUserService => {
+    const userServiceLogger = baseLogger.child({ module: 'users', layer: 'service' });
+        
+    return {
+        getOrCreateUser: (userData) =>
+            tryOrElse(
+                (reason) => {
+                    userServiceLogger.error({ error: reason }, 'Error syncing user');
+                    return new ServiceError('Error syncing user', { cause: reason })
+                },
+                async () => {
+                    const createUserDto: Users = {
+                        id: userData.uid,
+                        name: userData.email ?? '',
+                        email: userData.email ?? '',
+                        avatar: userData.picture ?? ''
+                    }
 
-        const user = await task.match({
-            Ok: async (user) => user,
-            Err: async (error) => {
-                if (error instanceof NotFoundError) {
-                    const newUser = await userRepo.createUser(userData);
-                    userServiceLogger.info(`User "${ newUser.id }" created`);
-                    return newUser;
+                    const getUserTask = await userRepo.getUser(createUserDto.id);
+                    
+                    if (getUserTask.isOk) {
+                        return getUserTask.value;
+                    };
+
+                    if (getUserTask.isErr && getUserTask.error instanceof NotFoundError) {
+                        const createUserTask = await userRepo.createUser(createUserDto);
+
+                        if (createUserTask.isErr) {
+                            throw createUserTask.error;
+                        }
+                        return createUserTask.value;
+                    }
+                    throw getUserTask.error;
                 }
-                userServiceLogger.error({ error });
-                throw error;
-            }
-        });
-
-        return user;
+            ),
+        }
     }
-});
