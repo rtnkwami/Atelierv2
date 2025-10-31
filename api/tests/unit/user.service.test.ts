@@ -1,4 +1,4 @@
-import { beforeEach, afterAll, it, expect, describe, vi, beforeAll, expectTypeOf } from 'vitest';
+import { beforeEach, afterAll, it, expect, describe, vi } from 'vitest';
 import createDiContainer from '../../src/di.ts';
 import { mockDecodedIdToken } from '../mocks/firebase.mocks.ts';
 import { NotFoundError, UserSyncError } from 'error.ts';
@@ -25,11 +25,24 @@ describe('User Service ', () => {
             avatar: mockDecodedIdToken.picture
         }
 
+        it('should return a user if they exist', async () => {
+            vi.spyOn(userRepo, 'getUser')
+                .mockReturnValue(Task.resolve(mockUser)
+            );
+            const syncUserToDbTask = await userService.getOrCreateUser(mockDecodedIdToken);
+
+            expect(syncUserToDbTask.isOk).toBe(true);
+            if (syncUserToDbTask.isOk) {
+                expect(syncUserToDbTask.value).toMatchObject(mockUser);
+            }
+        });
+
+
         it('should create a user if they do not exist', async () => {            
-            const getUserTaskSpy = vi.spyOn(userRepo, 'getUser')
+            vi.spyOn(userRepo, 'getUser')
                 .mockReturnValue(Task.reject(new NotFoundError)
             );
-            const createUserTaskSpy = vi.spyOn(userRepo, 'createUser').mockReturnValue(
+            vi.spyOn(userRepo, 'createUser').mockReturnValue(
                 Task.resolve(mockUser)
             )
             const syncUserToDbTask = await userService.getOrCreateUser(mockDecodedIdToken);
@@ -37,11 +50,12 @@ describe('User Service ', () => {
             expect(syncUserToDbTask.isOk).toBe(true);
             
             if (syncUserToDbTask.isOk) {
-                expect(getUserTaskSpy).toHaveBeenCalled()
-                expect(createUserTaskSpy).toHaveBeenCalledWith(mockUser);
+                expect(userRepo.getUser).toHaveBeenCalled()
+                expect(userRepo.createUser).toHaveBeenCalledWith(mockUser);
                 expect(syncUserToDbTask.value).toMatchObject(mockUser)
             }
         });
+
 
         it('should throw a user sync error on failure', async () => {
             vi.spyOn(userRepo, 'getUser')
