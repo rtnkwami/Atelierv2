@@ -3,28 +3,21 @@ import createDiContainer from '../../src/di.ts';
 import { mockDecodedIdToken } from '../mocks/firebase.mocks.ts';
 import { NotFoundError, UserSyncError } from 'error.ts';
 import { Task } from 'true-myth/task';
-import { Users } from '../../prisma-client/client.ts';
+import { mockUser } from '../mocks/firebase.mocks.ts';
 
 describe('User Service ', () => {
     const container = createDiContainer();
     const { userRepo, userService } = container.cradle;
 
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    afterAll(async () => {
+    afterAll(() => {
         vi.clearAllMocks();
     })
 
     describe('authenticated user sync to app db', () => {
-        const mockUser: Users = {
-            id: mockDecodedIdToken.uid,
-            name: mockDecodedIdToken.email,
-            email: mockDecodedIdToken.email,
-            avatar: mockDecodedIdToken.picture
-        }
-
         it('should return a user if they exist', async () => {
             vi.spyOn(userRepo, 'getUser')
                 .mockReturnValue(Task.resolve(mockUser)

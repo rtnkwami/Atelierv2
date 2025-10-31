@@ -1,7 +1,7 @@
 import { DatabaseError, NotFoundError } from "../../error.ts";
-import { PrismaClient } from "../../../prisma-client/client.ts";
-import { UsersCreateInput } from "../../../prisma-client/models.ts";
-import type { Users } from "../../../prisma-client/client.ts";
+import { PrismaClient } from "@db-client/client.ts";
+import { UsersCreateInput } from "@db-client/models.ts";
+import type { Users } from "@db-client/client.ts";
 import Task, { tryOrElse } from "true-myth/task";
 
 export interface IUserRepository {
