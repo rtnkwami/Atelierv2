@@ -16,5 +16,5 @@
     "module": "nodenext",
   },
   "extends": "../tsconfig.base.json",
-  "include": ["./src/**/*.ts", "prisma.config.ts"]
+  "include": ["./src/**/*.ts", "prisma.config.ts", "./tests/**/*.ts"]
 }

@@ -1,18 +1,19 @@
-import { createContainer, asFunction, asValue } from "awilix";
+import { createContainer, asFunction, asValue, AwilixContainer } from "awilix";
 import { prisma } from "@config/db.config.ts";
+import logger, { httpLogger } from "@config/logger.config.ts";
+import { PrismaClient } from "../prisma-client/client.ts";
+import { Logger } from "pino";
+import { HttpLogger } from "pino-http";
+import type { Express, Router } from "express";
+
 import { createUserRepository, IUserRepository } from "./modules/users/user.repository.ts";
 import { createAuthService, IAuthService } from "@auth/auth.service.ts";
 import { createAuthController, IAuthController } from "@auth/auth.controller.ts";
 import { createUserService, IUserService } from "modules/users/user.service.ts";
 import { createUserController, IUserController } from "modules/users/user.controller.ts";
 import { createAuthRouter } from "@auth/auth.routes.ts";
-import createAPI from "app.ts";
-import logger, { httpLogger } from "@config/logger.config.ts";
 import createUserRouter from "modules/users/user.routes.ts";
-import { PrismaClient } from "../prisma-client/client.ts";
-import { Logger } from "pino";
-import { HttpLogger } from "pino-http";
-import type { Express, Router } from "express";
+import createAPI from "app.ts";
 
 type Cradle = {
     db: PrismaClient;
@@ -32,7 +33,7 @@ type Cradle = {
     userRouter: Router;
 }
 
-export default function createDiContainer () {
+export default function createDiContainer (): AwilixContainer<Cradle> {
     const container = createContainer<Cradle>();
     
     container.register({

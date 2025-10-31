@@ -1,23 +1,18 @@
-import { describe, beforeAll, afterEach, it, expect, afterAll } from 'vitest';
+import { describe, beforeEach, it, expect, afterAll } from 'vitest';
 import createDiContainer from "../../../src/di.ts";
-import resetDB from '../../../src/utils/resetDb.ts'
+import resetDb from '@utils/resetDb.ts'
 import { NotFoundError } from '../../../src/error.ts';
 
 describe('User Repository', () => {
     const container = createDiContainer();
-    const prisma = container.resolve('db');
-    const userRepo = container.resolve('userRepo');
-
-    beforeAll(async () => {
-            await resetDB(container);
-        });
+    const { db, userRepo } = container.cradle;
     
-    afterEach(async () => {
-        await resetDB(container);
+    beforeEach(async () => {
+        await resetDb(container);
     });
 
     afterAll(async () => {
-        await prisma.$disconnect()
+        await db.$disconnect()
     })
 
     describe('user creation', () => {
