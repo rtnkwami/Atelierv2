@@ -1,7 +1,7 @@
 import { IUserRepository } from "./user.repository.ts"
 import { Users }from "@db-client/client.ts";
 import { NotFoundError, SellerUpgradeError, UserSyncError } from "error.ts";
-import Task, { tryOrElse } from "true-myth/task";
+import Task from "true-myth/task";
 import { Logger } from "pino";
 import { DecodedIdToken } from "firebase-admin/auth";
 import { task } from "true-myth";
