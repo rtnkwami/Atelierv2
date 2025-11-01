@@ -5,6 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:unit:watch": "vitest watch tests/unit",
+    "test:integration:watch": "vitest watch tests/integration",
     "coverage": "vitest run --coverage",
     "start": "npx tsx watch src/server.ts"
   },
