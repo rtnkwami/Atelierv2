@@ -16,7 +16,7 @@ export default function createAPI ({ userRouter, httpLogger }: dependencies) {
         origin: 'http://localhost:5173'
     }));
 
-    app.use('/auth', userRouter);
+    app.use('/users', userRouter);
 
     app.get('/health', (_, res) => {
         res.status(200).json({ message: "API is healthy." });
