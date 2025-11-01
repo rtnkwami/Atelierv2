@@ -9,12 +9,12 @@ import { task } from "true-myth";
 
  export interface IUserService {
     getOrCreateUser: (userData: DecodedIdToken) => Task<Users, UserSyncError>;
-    // upgradeUserToSeller: (userId: string) => Task<{
-    //         id: string,
-    //         roles: {
-    //             name: string
-    //         }[] 
-    //     }, SellerUpgradeError>;
+    upgradeUserToSeller: (userId: string) => Task<{
+            id: string,
+            roles: {
+                name: string
+            }[] 
+        }, SellerUpgradeError>;
 }
 
 type dependencies = {
@@ -50,7 +50,22 @@ export const createUserService = ({ userRepo, baseLogger }: dependencies): IUser
                     userServiceLogger.error({ error: reason }, 'Error syncing user');
                     return new UserSyncError('Error syncing user', { cause: reason });
                 })
+        },
+        upgradeUserToSeller: (userId) => {
+            return task.all([
+                userRepo.getUser(userId),
+                userRepo.getRole('seller')
+            ])
+            .andThen(([user, role]) => {
+                return userRepo.assignRoleToUser(user.id, role.name);
+            })
+            .mapRejected(reason => {
+                userServiceLogger.error(
+                        { error: reason },
+                        `Error upgrading user "${ userId }" to seller`
+                    )
+                return new SellerUpgradeError('Error upgrading user as seller', { cause: reason })
+            })
         }
-        
     }
 }
