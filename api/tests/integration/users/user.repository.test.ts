@@ -61,12 +61,68 @@ describe('User Repository', () => {
             }
         });
 
+
         it('should return a NotFoundError on nonexistent user', async () => {
             const getUserTask = await userRepo.getUser('123456');
             expect(getUserTask.isErr).toBe(true);
             
             if (getUserTask.isErr){
                 expect(getUserTask.error).toBeInstanceOf(NotFoundError);
+            }
+        });
+    })
+    
+    
+    describe('user updating', () => {
+        it('should update user roles', async () => {
+            const createUserTask = await userRepo.createUser({
+                id: '123456',
+                name: 'Mary Jane',
+                email: 'mj@outlook.com',
+                avatar: 'https://reallygoodlooking.com/mj.jpg'
+            });
+            expect(createUserTask.isOk).toBe(true);
+    
+            if (createUserTask.isOk){
+                const newUser = createUserTask.value
+                const getUserRolesTask = await userRepo.assignRoleToUser(newUser.id, 'seller');
+    
+                if(getUserRolesTask.isErr){ throw getUserRolesTask.error }
+    
+                expect(getUserRolesTask.value).toHaveProperty('id');
+                expect(getUserRolesTask.value).toHaveProperty('roles');
+                expect(getUserRolesTask.value.roles).toHaveLength(2);
+            }
+        })
+    
+        
+        it('should throw a not found error on nonexistent user id', async () => {
+            const getUserRolesTask = await userRepo.assignRoleToUser('12345', 'seller');
+            expect(getUserRolesTask.isErr).toBe(true);
+            
+            if (getUserRolesTask.isErr) {
+                expect(getUserRolesTask.error).toBeInstanceOf(NotFoundError);
+            }
+        });
+    
+    
+        it('should throw a not found error on nonexistent role', async () => {
+            const createUserTask = await userRepo.createUser({
+                id: '123456',
+                name: 'Mary Jane',
+                email: 'mj@outlook.com',
+                avatar: 'https://reallygoodlooking.com/mj.jpg'
+            });
+            expect(createUserTask.isOk).toBe(true);
+    
+            if (createUserTask.isOk) {
+                const newUser = createUserTask.value
+                const getUserRolesTask = await userRepo.assignRoleToUser(newUser.id, 'invalid_role');
+    
+                expect(getUserRolesTask.isErr).toBe(true);
+                if (getUserRolesTask.isErr) {
+                    expect(getUserRolesTask.error).toBeInstanceOf(NotFoundError);
+                }
             }
         })
     })
