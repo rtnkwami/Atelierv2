@@ -105,4 +105,27 @@ describe('User Repository', () => {
             }
         });
     })
+
+    describe('user auth actions', () => {
+        it('should return a role given a role name', async () => {
+            const getRoleTask = await userRepo.getRole('seller');
+
+            expect(getRoleTask.isOk).toBe(true);
+            if (getRoleTask.isOk) {
+                expect(getRoleTask.value).toHaveProperty('id');
+                expect(getRoleTask.value).toHaveProperty('name');
+                expect(getRoleTask.value.name).toBe('seller');
+            }
+        });
+
+        
+        it('should throw a not found error on nonexistent role', async () => {
+            const getRoleTask = await userRepo.getRole('invalid_role');
+            expect(getRoleTask.isErr).toBe(true);
+
+            if (getRoleTask.isErr){
+                expect(getRoleTask.error).toBeInstanceOf(NotFoundError);
+            }
+        })
+    })
 });

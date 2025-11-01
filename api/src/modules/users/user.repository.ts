@@ -1,18 +1,19 @@
 import { DatabaseError, NotFoundError } from "../../error.ts";
 import { PrismaClient } from "@db-client/client.ts";
 import { UsersCreateInput } from "@db-client/models.ts";
-import type { Users } from "@db-client/client.ts";
+import type { Roles, Users } from "@db-client/client.ts";
 import Task, { tryOrElse } from "true-myth/task";
 
 export interface IUserRepository {
     createUser: (userData: UsersCreateInput) => Task<Users, DatabaseError>;
-    getUser: (userId: string) => Task<Users, NotFoundError | Error>;
+    getUser: (userId: string) => Task<Users, NotFoundError | DatabaseError>;
     assignRoleToUser: (userId: string, roleName: string) => Task<{
         id: string,
         roles: {
             name: string
         }[] 
-    }, DatabaseError>
+    }, DatabaseError>;
+    getRole: (roleName: string) => Task<Roles, NotFoundError | DatabaseError>;
 }
 
 type dependencies = {
@@ -26,7 +27,7 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 if (reason instanceof NotFoundError) {
                     return reason;
                 }
-                return new Error(`Database query failed: ${ String(reason) }`);
+                return new DatabaseError(`Database query failed: ${ String(reason) }`);
             },
             async () => {
                 const user = await db.users.findUnique({
@@ -83,5 +84,22 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 
                 return userRoles;
             }
-        )
+        ),
+        getRole: (roleName) =>
+            tryOrElse(
+                (reason) => {
+                    if (reason instanceof NotFoundError) { return reason };
+                    return new DatabaseError('Error getting role', { cause: reason });
+                },
+                async () => {
+                    const role = await db.roles.findUnique({
+                        where: {
+                            name: roleName
+                        }
+                    });
+                    if (!role) { throw new NotFoundError(`Role "${ roleName }" does not exist`) }
+
+                    return role;
+                }
+            )
 });
