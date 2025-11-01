@@ -11,7 +11,8 @@ export default function createUserRouter ({ userController, tokenVerificationMid
 
     router.use(tokenVerificationMiddleware);
 
-    router.post('/me', userController.syncAuthNUsertoDb)
+    router.post('/me', userController.syncAuthNUsertoDb);
+    router.post('/me/seller', userController.upgradeUserToSeller)
 
     return router;
 }

@@ -45,5 +45,44 @@ describe('User API Endpoints', () => {
             })
         })
 
+        describe('POST /users/me/seller', () => {
+            beforeEach(() => {
+                vi.clearAllMocks();
+            });
+
+            it('should return a 200 upon seller upgrade success', async () => {
+                const mockSuccessfulUpgrade = {
+                    id: 'some-user-id',
+                    roles: [
+                        { name: 'seller' }
+                    ]
+                };
+                
+                vi.spyOn(userService, 'upgradeUserToSeller')
+                    .mockReturnValue(Task.resolve(mockSuccessfulUpgrade));
+
+                const response = await request(app)
+                    .post('/users/me/seller');
+
+                expect(response.statusCode).toBe(200);
+                // We can verify the service was called, assuming auth middleware is set up
+                expect(userService.upgradeUserToSeller).toHaveBeenCalledTimes(1);
+            });
+            
+            it('should return a 500 upon seller upgrade failure', async () => {
+                // Mock the service to return a failed Task
+                const testError = new Error('Database failed to assign role');
+                vi.spyOn(userService, 'upgradeUserToSeller')
+                    .mockReturnValue(Task.reject(testError));
+
+                const response = await request(app)
+                    .post('/users/me/seller');
+
+                expect(response.statusCode).toBe(500);
+                expect(response.body).toHaveProperty('error');
+                expect(response.body.error).toBe('Error upgrading user to seller');
+                expect(userService.upgradeUserToSeller).toHaveBeenCalledTimes(1);
+            });
+        });
     })
 })

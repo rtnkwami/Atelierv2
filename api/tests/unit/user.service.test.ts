@@ -96,7 +96,7 @@ describe('User Service ', () => {
             vi.spyOn(userRepo, 'getUser').mockReturnValue(Task.resolve(mockUser));
             vi.spyOn(userRepo, 'getRole').mockReturnValue(Task.reject(new NotFoundError('Role not found')));
 
-            const result = await userService.upgradeUserToSeller('user123');
+            const result = await userService.upgradeUserToSeller(mockUser.id);
 
             expect(result.isErr).toBe(true);
             if (result.isErr) {
@@ -110,7 +110,7 @@ describe('User Service ', () => {
             vi.spyOn(userRepo, 'getRole').mockReturnValue(Task.resolve({ id:'1234', name: 'seller' }));
             vi.spyOn(userRepo, 'assignRoleToUser').mockReturnValue(Task.reject(new DatabaseError('Failed')));
 
-            const result = await userService.upgradeUserToSeller('user123');
+            const result = await userService.upgradeUserToSeller(mockUser.id);
 
             expect(result.isErr).toBe(true);
             if (result.isErr) {
