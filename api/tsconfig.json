@@ -7,12 +7,15 @@
     "noEmit": true,
     "paths": {
       "@config/*": ["config/*"],
+      "@db-client/*": ["../prisma-client/*"],
+      "@utils/*": ["utils/*"],
       "@auth/*": ["modules/auth/*"],
       "@auth/routes":  ["modules/auth/auth.routes"],
       "@auth/models": ["modules/auth/models/index"]
     },
-    "types": ["@types/jest"]
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
   },
   "extends": "../tsconfig.base.json",
-  "include": ["./src/**/*.ts", "prisma.config.ts"]
+  "include": ["./src/**/*.ts", "prisma.config.ts", "./tests/**/*.ts"]
 }

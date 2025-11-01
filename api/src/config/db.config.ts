@@ -1,5 +1,5 @@
-import config from "../env";
-import { PrismaClient } from "../../prisma-client/client";
+import config from "../env.ts";
+import { PrismaClient } from "../../prisma-client/client.ts";
 
 export const prisma = new PrismaClient({
     datasources: {

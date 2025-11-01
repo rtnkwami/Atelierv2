@@ -1,0 +1,2 @@
+npm run --prefix api test:unit
+npm run --prefix api test:integration

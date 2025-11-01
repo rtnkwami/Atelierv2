@@ -1,15 +1,13 @@
-import express from 'express';
+import express, { type Router } from 'express';
 import cors from 'cors';
-import { httpLogger } from '@config/logger.config';
-import { prisma } from '@config/db.config';
+import { HttpLogger } from 'pino-http';
 
-import { createAuthRouter } from '@auth/routes';
-import { createAuthRepository } from '@auth/auth.repository';
-import { createAuthController } from '@auth/auth.controller';
+type dependencies = {
+    userRouter: Router,
+    httpLogger: HttpLogger
+}
 
-export function createApp (dependencies: {
-    authRouter: ReturnType<typeof createAuthRouter>
-}) {
+export default function createAPI ({ userRouter, httpLogger }: dependencies) {
     const app = express();
 
     app.use(httpLogger);
@@ -18,21 +16,11 @@ export function createApp (dependencies: {
         origin: 'http://localhost:5173'
     }));
 
-    app.use('/auth', dependencies.authRouter);
+    app.use('/users', userRouter);
 
-    app.get('/', (req, res) => {
-        res.json({ message: "Hello World!" });
+    app.get('/health', (_, res) => {
+        res.status(200).json({ message: "API is healthy." });
     })
 
     return app;
-}
-
-
-
-// Dependency Injection
-//-------------------------------------------
-// Auth DI
-const authRepo = createAuthRepository(prisma);
-const authController = createAuthController(authRepo);
-const authRouter = createAuthRouter(authController);
-export default createApp({ authRouter });
+};

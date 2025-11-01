@@ -1,7 +1,10 @@
-import app from "./app";
-import config from "./env";
-import logger from "./config/logger.config";
+import config from "./env.ts";
+import createDiContainer from "di.ts";
 
-app.listen(config.api.port, () => {
+const container = createDiContainer();
+const api = container.resolve('app');
+const logger = container.resolve('baseLogger');
+
+api.listen(config.api.port, () => {
     logger.info(`Server listening on http://localhost:${config.api.port}...`);
 });
