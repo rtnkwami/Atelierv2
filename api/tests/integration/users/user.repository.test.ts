@@ -1,7 +1,7 @@
 import { describe, beforeEach, it, expect, afterAll } from 'vitest';
 import createDiContainer from "../../../src/di.ts";
 import resetDb from '@utils/resetDb.ts'
-import { NotFoundError } from '../../../src/error.ts';
+import { DatabaseError, NotFoundError } from '../../../src/error.ts';
 
 describe('User Repository', () => {
     const container = createDiContainer();
@@ -96,34 +96,13 @@ describe('User Repository', () => {
         })
     
         
-        it('should throw a not found error on nonexistent user id', async () => {
+        it('should throw a database error on failure', async () => {
             const getUserRolesTask = await userRepo.assignRoleToUser('12345', 'seller');
             expect(getUserRolesTask.isErr).toBe(true);
             
             if (getUserRolesTask.isErr) {
-                expect(getUserRolesTask.error).toBeInstanceOf(NotFoundError);
+                expect(getUserRolesTask.error).toBeInstanceOf(DatabaseError);
             }
         });
-    
-    
-        it('should throw a not found error on nonexistent role', async () => {
-            const createUserTask = await userRepo.createUser({
-                id: '123456',
-                name: 'Mary Jane',
-                email: 'mj@outlook.com',
-                avatar: 'https://reallygoodlooking.com/mj.jpg'
-            });
-            expect(createUserTask.isOk).toBe(true);
-    
-            if (createUserTask.isOk) {
-                const newUser = createUserTask.value
-                const getUserRolesTask = await userRepo.assignRoleToUser(newUser.id, 'invalid_role');
-    
-                expect(getUserRolesTask.isErr).toBe(true);
-                if (getUserRolesTask.isErr) {
-                    expect(getUserRolesTask.error).toBeInstanceOf(NotFoundError);
-                }
-            }
-        })
     })
 });

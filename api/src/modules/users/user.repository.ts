@@ -12,7 +12,7 @@ export interface IUserRepository {
         roles: {
             name: string
         }[] 
-    }, DatabaseError | NotFoundError>
+    }, DatabaseError>
 }
 
 type dependencies = {
@@ -65,22 +65,13 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
     assignRoleToUser: (userId, roleName) =>
         tryOrElse(
             (reason) => {
-                if (reason instanceof NotFoundError) { return reason }
                 return new DatabaseError('Error getting user roles', { cause: reason })
             },
             async () => {
-                const user = await db.users.findUnique({ where: { id: userId } });
-                if (!user) {
-                    throw new NotFoundError(`User "${ userId }" does not exist`)
-                }
-                
-                const validatedRole = await db.roles.findFirst({ where: { name: roleName } });
-                if (!validatedRole) { throw new NotFoundError(`Role "${ roleName }" does not exist`) }
-
                 const userRoles = await db.users.update({
                     where: { id: userId },
                     data: {
-                        roles: { connect: { id: validatedRole.id } }
+                        roles: { connect: { name: roleName } }
                     },
                     select: {
                         id: true,
