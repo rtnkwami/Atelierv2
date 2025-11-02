@@ -23,7 +23,8 @@ jobs:
                 cache: npm
 
             - name: Install dependencies
-              run: cd api && npm ci
+              working-directory: ./api
+              run: npm ci
 
             - name: Run unit tests
               env:
@@ -43,10 +44,12 @@ jobs:
                 cache: npm
 
             - name: Install dependencies
-              run: cd api && npm ci
+              working-directory: ./api
+              run: npm ci
 
             - name: Run unit tests
               env:
                 API_PORT: ${{ env.API_PORT }}
                 DATABASE_URL: ${{ env.DATABASE_URL }}
+              working-directory: ./api
               run: npm run test:integration
