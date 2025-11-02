@@ -10,49 +10,25 @@ on:
             - feat/*
 
 jobs:
-    unit-tests:
+    tests:
         runs-on: ubuntu-latest
-        name: Run unit tests
+        strategy:
+          matrix:
+            suite: [unit, integration]
+        name: Run ${{ matrix.suite }} tests
         steps:
             - uses: actions/checkout@v5
             
-            - name: Set up Node.js
-              uses: actions/setup-node@v6
+            - uses: actions/setup-node@v6
               with:
                 node-version: 24
                 cache: npm
                 cache-dependency-path: ./api/package-lock.json
 
-            - name: Install dependencies
-              working-directory: ./api
+            - working-directory: ./api
               run: npm ci
-
-            - name: Run unit tests
-              env:
-                API_PORT: ${{ env.API_PORT }}
-              working-directory: ./api
-              run: npm run test:unit
-
-    integration-tests:
-        runs-on: ubuntu-latest
-        name: Run integration tests
-        steps:
-            - uses: actions/checkout@v5
             
-            - name: Set up Node.js
-              uses: actions/setup-node@v6
-              with:
-                node-version: 24
-                cache: npm
-                cache-dependency-path: ./api/package-lock.json
-
-            - name: Install dependencies
-              working-directory: ./api
-              run: npm ci
-
-            - name: Run integration tests
+            - working-directory: ./api
               env:
                 API_PORT: ${{ env.API_PORT }}
-                DATABASE_URL: ${{ env.DATABASE_URL }}
-              working-directory: ./api
-              run: npm run test:integration
+              run: npm run test:${{ matrix.suite }}
