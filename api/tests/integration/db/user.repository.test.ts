@@ -7,9 +7,16 @@ import { execSync } from 'child_process';
 
 describe('User Repository', async () => {
     await using postgresContainer = await new PostgreSqlContainer('postgres:18').start();
-    process.env.DATABASE_URL = postgresContainer.getConnectionUri();
+    const connectionUri = postgresContainer.getConnectionUri();
+    process.env.DATABASE_URL = connectionUri;
 
-    execSync("npx prisma db push --force-reset", { stdio: "inherit" });
+    execSync("npx prisma db push --force-reset", {
+        stdio: "inherit",
+        env: {
+            ...process.env,
+            DATABASE_URL: connectionUri
+        }
+    });
 
     const container = createDiContainer();
     const { db, userRepo } = container.cradle;

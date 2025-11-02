@@ -8,9 +8,16 @@ import { DatabaseError } from 'error.ts';
 
 describe('Shop repository', async () => {
     await using postgresContainer = await new PostgreSqlContainer('postgres:18').start();
-    process.env.DATABASE_URL = postgresContainer.getConnectionUri();
+    const connectionUri = postgresContainer.getConnectionUri();
+    process.env.DATABASE_URL = connectionUri;
 
-    execSync("npx prisma db push --force-reset", { stdio: "inherit" });
+    execSync("npx prisma db push --force-reset", {
+        stdio: "inherit",
+        env: {
+            ...process.env,
+            DATABASE_URL: connectionUri
+        }
+    });
 
     const container = createDiContainer();
     const { db, shopRepo, userRepo } = container.cradle;
