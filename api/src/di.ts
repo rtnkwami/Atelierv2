@@ -12,6 +12,7 @@ import { createUserController, IUserController } from "modules/users/user.contro
 import createUserRouter from "modules/users/user.routes.ts";
 import createAPI from "app.ts";
 import { verifyJwt } from "middleware/verifyJwt.ts";
+import { createShopRepository, IShopRepository } from "modules/shops/shop.repository.ts";
 
 type Cradle = {
     db: PrismaClient;
@@ -25,6 +26,7 @@ type Cradle = {
     userController: IUserController;
     
     userRepo: IUserRepository;
+    shopRepo: IShopRepository;
 
     userRouter: Router;
 }
@@ -45,6 +47,7 @@ export default function createDiContainer (): AwilixContainer<Cradle> {
         userController: asFunction(createUserController).scoped(),
         
         userRepo: asFunction(createUserRepository).scoped(),
+        shopRepo: asFunction(createShopRepository).scoped(),
         
         userRouter: asFunction(createUserRouter).scoped(),
     });

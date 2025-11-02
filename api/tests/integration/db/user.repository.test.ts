@@ -2,8 +2,15 @@ import { describe, beforeEach, it, expect, afterAll } from 'vitest';
 import createDiContainer from "../../../src/di.ts";
 import resetDb from '@utils/resetDb.ts'
 import { DatabaseError, NotFoundError } from '../../../src/error.ts';
+import { PostgreSqlContainer } from '@testcontainers/postgresql';
+import { execSync } from 'child_process';
 
-describe('User Repository', () => {
+describe('User Repository', async () => {
+    await using postgresContainer = await new PostgreSqlContainer('postgres:18').start();
+    process.env.DATABASE_URL = postgresContainer.getConnectionUri();
+
+    execSync("npx prisma db push --force-reset", { stdio: "inherit" });
+
     const container = createDiContainer();
     const { db, userRepo } = container.cradle;
     
