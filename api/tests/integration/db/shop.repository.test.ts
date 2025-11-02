@@ -16,7 +16,7 @@ describe('Shop repository', async () => {
     const { db, shopRepo, userRepo } = container.cradle;
 
     beforeEach(async () => {
-        await resetDb(container);
+        await resetDb(db);
     });
     
     afterAll(async () => {
