@@ -48,7 +48,7 @@ jobs:
               working-directory: ./api
               run: npm ci
 
-            - name: Run unit tests
+            - name: Run integration tests
               env:
                 API_PORT: ${{ env.API_PORT }}
                 DATABASE_URL: ${{ env.DATABASE_URL }}
