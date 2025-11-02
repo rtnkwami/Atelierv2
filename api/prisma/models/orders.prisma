@@ -3,6 +3,7 @@ model Orders {
   status   Status          @default(pending)
   total    Float
   products OrderProducts[]
+  shops    Shops[]
 }
 
 model OrderProducts {

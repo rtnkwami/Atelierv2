@@ -2,5 +2,8 @@ model Shops {
   id          String     @id @default(uuid()) @db.Uuid
   name        String
   description String
-  products    Products[]
+  user        Users      @relation(fields: [usersId], references: [id])
+  usersId     String     @unique
+  products    Products?
+  orders      Orders[]
 }
