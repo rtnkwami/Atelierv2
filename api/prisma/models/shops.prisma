@@ -4,6 +4,6 @@ model Shops {
   description String
   user        Users      @relation(fields: [usersId], references: [id])
   usersId     String     @unique
-  products    Products?
+  products    Products[]
   orders      Orders[]
 }
