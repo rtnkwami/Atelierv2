@@ -29,6 +29,7 @@ jobs:
             - name: Run unit tests
               env:
                 API_PORT: ${{ env.API_PORT }}
+              working-directory: ./api
               run: npm run test:unit
 
     integration-tests:
