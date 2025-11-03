@@ -42,9 +42,7 @@ jobs:
 
     env:
       API_PORT: ${{ secrets.API_PORT }}
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     services:
