@@ -58,4 +58,4 @@ describe('Shop repository', async () => {
             });
         });
     })
-});
+}); // test
