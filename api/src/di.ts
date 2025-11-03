@@ -1,5 +1,4 @@
 import { createContainer, asFunction, asValue, AwilixContainer } from "awilix";
-import { prisma } from "@config/db.config.ts";
 import logger, { httpLogger } from "@config/logger.config.ts";
 import { PrismaClient } from "../prisma-client/client.ts";
 import { Logger } from "pino";
@@ -33,6 +32,8 @@ type Cradle = {
 
 export default function createDiContainer (): AwilixContainer<Cradle> {
     const container = createContainer<Cradle>();
+
+    const prisma = new PrismaClient();
     
     container.register({
         db: asValue(prisma),
