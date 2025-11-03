@@ -42,7 +42,7 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
         ),
     createUser: (userData) =>
         tryOrElse(
-            (reason) => new DatabaseError('Error creating database', { cause: reason }),
+            (reason) => new DatabaseError('Error creating user', { cause: reason }),
             async () => {
                 const newUser = await db.users.create({
                     data: {
