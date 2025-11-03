@@ -24,22 +24,24 @@ describe('User Repository', async () => {
                 avatar: 'https://funnypics.com/jojo.png'
             });
     
-            expect(createUserTask.isOk).toBe(true);
-    
-            if (createUserTask.isOk) {
-                const newUser = createUserTask.value;
-
-                expect(newUser).toMatchObject({
-                    id: "2d43frg5g53",
-                    name: 'John Doe',
-                    email: 'jd@gmail.com',
-                    avatar: 'https://funnypics.com/jojo.png'
-                })
-            }
+            createUserTask.match({
+                Ok: (newUser) => {
+                    expect(newUser).toMatchObject({
+                        id: "2d43frg5g53",
+                        name: 'John Doe',
+                        email: 'jd@gmail.com',
+                        avatar: 'https://funnypics.com/jojo.png'
+                    });
+                },
+                Err: (error) => {
+                    console.error('Failed to create user:', error);
+                    expect.fail('User creation should have succeeded');
+                }
+            });
         });
     })
 
-    describe('user lisitng', () => {
+    describe('user listing', () => {
         it('should get a user', async () => {
             await userRepo.createUser({
                 id: '123456',
@@ -49,29 +51,38 @@ describe('User Repository', async () => {
             });
 
             const getUserTask = await userRepo.getUser('123456');
-            expect(getUserTask.isOk).toBe(true);
             
-            if(getUserTask.isOk) {
-                expect(getUserTask.value).toMatchObject({
-                    id: '123456',
-                    name: 'Mary Jane',
-                    email: 'mj@outlook.com',
-                    avatar: 'https://reallygoodlooking.com/mj.jpg'
-                })
-            }
+            getUserTask.match({
+                Ok: (user) => {
+                    expect(user).toMatchObject({
+                        id: '123456',
+                        name: 'Mary Jane',
+                        email: 'mj@outlook.com',
+                        avatar: 'https://reallygoodlooking.com/mj.jpg'
+                    });
+                },
+                Err: (error) => {
+                    console.error('Failed to get user:', error);
+                    expect.fail('Get user should have succeeded');
+                }
+            });
         });
-
 
         it('should return a NotFoundError on nonexistent user', async () => {
             const getUserTask = await userRepo.getUser('123456');
-            expect(getUserTask.isErr).toBe(true);
             
-            if (getUserTask.isErr){
-                expect(getUserTask.error).toBeInstanceOf(NotFoundError);
-            }
+            getUserTask.match({
+                Ok: (user) => {
+                    console.error('Unexpectedly found user:', user);
+                    expect.fail('Should not have found user');
+                },
+                Err: (error) => {
+                    console.log('Expected error:', error);
+                    expect(error).toBeInstanceOf(NotFoundError);
+                }
+            });
         });
     })
-    
     
     describe('user updating', () => {
         it('should update user roles', async () => {
@@ -81,28 +92,43 @@ describe('User Repository', async () => {
                 email: 'mj@outlook.com',
                 avatar: 'https://reallygoodlooking.com/mj.jpg'
             });
-            expect(createUserTask.isOk).toBe(true);
     
-            if (createUserTask.isOk){
-                const newUser = createUserTask.value
-                const getUserRolesTask = await userRepo.assignRoleToUser(newUser.id, 'seller');
-    
-                if(getUserRolesTask.isErr){ throw getUserRolesTask.error }
-    
-                expect(getUserRolesTask.value).toHaveProperty('id');
-                expect(getUserRolesTask.value).toHaveProperty('roles');
-                expect(getUserRolesTask.value.roles).toHaveLength(2);
-            }
+            createUserTask.match({
+                Ok: async (newUser) => {
+                    const getUserRolesTask = await userRepo.assignRoleToUser(newUser.id, 'seller');
+        
+                    getUserRolesTask.match({
+                        Ok: (userWithRoles) => {
+                            expect(userWithRoles).toHaveProperty('id');
+                            expect(userWithRoles).toHaveProperty('roles');
+                            expect(userWithRoles.roles).toHaveLength(2);
+                        },
+                        Err: (error) => {
+                            console.error('Failed to assign role:', error);
+                            expect.fail('Role assignment should have succeeded');
+                        }
+                    });
+                },
+                Err: (error) => {
+                    console.error('Failed to create user:', error);
+                    expect.fail('User creation should have succeeded');
+                }
+            });
         })
     
-        
         it('should throw a database error on failure', async () => {
             const getUserRolesTask = await userRepo.assignRoleToUser('12345', 'seller');
-            expect(getUserRolesTask.isErr).toBe(true);
             
-            if (getUserRolesTask.isErr) {
-                expect(getUserRolesTask.error).toBeInstanceOf(DatabaseError);
-            }
+            getUserRolesTask.match({
+                Ok: (result) => {
+                    console.error('Unexpectedly succeeded:', result);
+                    expect.fail('Should have failed with DatabaseError');
+                },
+                Err: (error) => {
+                    console.log('Expected error:', error);
+                    expect(error).toBeInstanceOf(DatabaseError);
+                }
+            });
         });
     })
 
@@ -110,22 +136,32 @@ describe('User Repository', async () => {
         it('should return a role given a role name', async () => {
             const getRoleTask = await userRepo.getRole('seller');
 
-            expect(getRoleTask.isOk).toBe(true);
-            if (getRoleTask.isOk) {
-                expect(getRoleTask.value).toHaveProperty('id');
-                expect(getRoleTask.value).toHaveProperty('name');
-                expect(getRoleTask.value.name).toBe('seller');
-            }
+            getRoleTask.match({
+                Ok: (role) => {
+                    expect(role).toHaveProperty('id');
+                    expect(role).toHaveProperty('name');
+                    expect(role.name).toBe('seller');
+                },
+                Err: (error) => {
+                    console.error('Failed to get role:', error);
+                    expect.fail('Get role should have succeeded');
+                }
+            });
         });
 
-        
         it('should throw a not found error on nonexistent role', async () => {
             const getRoleTask = await userRepo.getRole('invalid_role');
-            expect(getRoleTask.isErr).toBe(true);
-
-            if (getRoleTask.isErr){
-                expect(getRoleTask.error).toBeInstanceOf(NotFoundError);
-            }
+            
+            getRoleTask.match({
+                Ok: (role) => {
+                    console.error('Unexpectedly found role:', role);
+                    expect.fail('Should not have found role');
+                },
+                Err: (error) => {
+                    console.log('Expected error:', error);
+                    expect(error).toBeInstanceOf(NotFoundError);
+                }
+            });
         })
     })
 });

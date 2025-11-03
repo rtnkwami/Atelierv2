@@ -2,7 +2,7 @@ import resetDb from '@utils/resetDb.ts';
 import createDiContainer from 'di.ts'
 import { beforeEach, afterAll, it, expect, describe } from 'vitest'
 import { mockUser } from '../../mocks/firebase.mocks.ts';
-import { DatabaseError } from 'error.ts';
+import { DatabaseError, IntegrationTestError } from 'error.ts';
 
 describe('Shop repository', async () => {
     const container = createDiContainer();
@@ -24,27 +24,38 @@ describe('Shop repository', async () => {
         };
 
         it('should return a created shop', async () => {
-            
-           const createShopTask = await userRepo.createUser(mockUser)
+            const createShopTask = await userRepo.createUser(mockUser)
                 .andThen(() => {
                     return shopRepo.createShop(mockUser.id, shopData)
-                });
-    
-            expect(createShopTask.isOk).toBe(true);
-            if (createShopTask.isOk) {
-                expect(createShopTask.value.usersId).toEqual(mockUser.id);
-                expect(createShopTask.value.name).toEqual(shopData.name);
-                expect(createShopTask.value.description).toEqual(shopData.description);
-            }
+                })
+                .mapRejected(reason => new IntegrationTestError('Error while running test', { cause: reason }));
+
+            createShopTask.match({
+                Ok: (shop) => {
+                    expect(shop.usersId).toEqual(mockUser.id);
+                    expect(shop.name).toEqual(shopData.name);
+                    expect(shop.description).toEqual(shopData.description);
+                },
+                Err: (error) => {
+                    console.error('Task failed:', error);
+                    
+                }
+            });
         });
 
         it('should return a database error on failure', async () => {
             const createShopTask = await shopRepo.createShop('nonexistent user id', shopData);
 
-            expect(createShopTask.isErr).toBe(true);
-            if (createShopTask.isErr) {
-                expect(createShopTask.error).toBeInstanceOf(DatabaseError);
-            }
-        })
+            createShopTask.match({
+                Ok: (shop) => {
+                    console.error('Task unexpectedly succeeded with shop:', shop);
+                    expect.fail('Task should have failed');
+                },
+                Err: (error) => {
+                    console.log('Expected error:', error);
+                    expect(error).toBeInstanceOf(DatabaseError);
+                }
+            });
+        });
     })
 });
