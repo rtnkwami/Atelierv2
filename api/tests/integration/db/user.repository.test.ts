@@ -7,7 +7,7 @@ import { execSync } from 'child_process';
 
 describe('User Repository', async () => {
     await using postgresContainer = await new PostgreSqlContainer('postgres:18').start();
-    const connectionUri = postgresContainer.getConnectionUri();
+    const connectionUri = `postgresql://${postgresContainer.getUsername()}:${postgresContainer.getPassword()}@${postgresContainer.getHost()}:${postgresContainer.getPort()}/${postgresContainer.getDatabase()}`;
     process.env.DATABASE_URL = connectionUri;
 
     execSync("npx prisma db push --force-reset", {
