@@ -70,6 +70,10 @@ jobs:
         working-directory: ./api
         run: npm ci
 
+      - name: Run test database migrations
+        working-directory: ./api
+        run: npx prisma migrate deploy
+
       - name: Run integration tests
         working-directory: ./api
         run: npm run test:integration
