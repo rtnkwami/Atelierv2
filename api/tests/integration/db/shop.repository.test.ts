@@ -2,23 +2,9 @@ import resetDb from '@utils/resetDb.ts';
 import createDiContainer from 'di.ts'
 import { beforeEach, afterAll, it, expect, describe } from 'vitest'
 import { mockUser } from '../../mocks/firebase.mocks.ts';
-import { PostgreSqlContainer } from '@testcontainers/postgresql';
-import { execSync } from 'child_process';
 import { DatabaseError } from 'error.ts';
 
 describe('Shop repository', async () => {
-    await using postgresContainer = await new PostgreSqlContainer('postgres:18').start();
-    const connectionUri = `postgresql://${postgresContainer.getUsername()}:${postgresContainer.getPassword()}@${postgresContainer.getHost()}:${postgresContainer.getPort()}/${postgresContainer.getDatabase()}`;
-    process.env.DATABASE_URL = connectionUri;
-
-    execSync("npx prisma db push --force-reset", {
-        stdio: "inherit",
-        env: {
-            ...process.env,
-            DATABASE_URL: connectionUri
-        }
-    });
-
     const container = createDiContainer();
     const { db, shopRepo, userRepo } = container.cradle;
 
