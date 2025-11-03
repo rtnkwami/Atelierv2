@@ -2,33 +2,79 @@ name: CI Pipeline
 run-name: "Tests for ${{ github.event.pull_request.title || github.event.head_commit.message }}"
 
 on:
-    pull_request:
-        branches:
-            - main
-    push:
-        branches:
-            - feat/*
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - feat/*
+      - fix/*
 
 jobs:
-    tests:
-        runs-on: ubuntu-latest
-        strategy:
-          matrix:
-            suite: [unit, integration]
-        name: Run ${{ matrix.suite }} tests
-        steps:
-            - uses: actions/checkout@v5
-            
-            - uses: actions/setup-node@v6
-              with:
-                node-version: 24
-                cache: npm
-                cache-dependency-path: ./api/package-lock.json
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Run unit tests
 
-            - working-directory: ./api
-              run: npm ci
-            
-            - working-directory: ./api
-              env:
-                API_PORT: ${{ env.API_PORT }}
-              run: npm run test:${{ matrix.suite }}
+    env:
+      API_PORT: ${{ secrets.API_PORT }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ./api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./api
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: ./api
+        run: npm run test:unit
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    name: Run integration tests
+
+    env:
+      API_PORT: ${{ secrets.API_PORT }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    services:
+      postgres:
+        image: postgres:18
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        options: >-
+          --health-cmd="pg_isready -U ${{ github.env.POSTGRES_USER }}"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ./api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./api
+        run: npm ci
+
+      - name: Run integration tests
+        working-directory: ./api
+        run: npm run test:integration
