@@ -2,14 +2,20 @@ import resetDb from '@utils/resetDb.ts';
 import createDiContainer from 'di.ts'
 import { beforeEach, afterAll, it, expect, describe } from 'vitest'
 import { mockUser } from '../../mocks/firebase.mocks.ts';
-import { DatabaseError, IntegrationTestError } from 'error.ts';
+import { DatabaseError, NotFoundError } from 'error.ts';
 
 describe('Shop repository', async () => {
     const container = createDiContainer();
     const { db, shopRepo, userRepo } = container.cradle;
 
+    const shopData = {
+        name: 'Test shop',
+        description: 'a shop specifically for this test',
+    };
+    
     beforeEach(async () => {
         await resetDb(db);
+        await userRepo.createUser(mockUser);
     });
     
     afterAll(async () => {
@@ -18,17 +24,8 @@ describe('Shop repository', async () => {
 
     
     describe('shop creation', () => {
-        const shopData = {
-            name: 'Test shop',
-            description: 'a shop specifically for this test',
-        };
-
         it('should return a created shop', async () => {
-            const createShopTask = await userRepo.createUser(mockUser)
-                .andThen(() => {
-                    return shopRepo.createShop(mockUser.id, shopData)
-                })
-                .mapRejected(reason => new IntegrationTestError('Error while running test', { cause: reason }));
+            const createShopTask = await shopRepo.createShop(mockUser.id, shopData)
 
             createShopTask.match({
                 Ok: (shop) => {
@@ -38,7 +35,7 @@ describe('Shop repository', async () => {
                 },
                 Err: (error) => {
                     console.error('Task failed:', error);
-                    
+                    expect.fail('Task should have returned a created shop');         
                 }
             });
         });
@@ -57,5 +54,37 @@ describe('Shop repository', async () => {
                 }
             });
         });
+        
+        describe('shop listing', () => {
+            it('should return a single shop', async () => {
+                const findShopTask = await shopRepo.createShop(mockUser.id, shopData)
+                    .andThen((shop) => shopRepo.getShop(shop.id))
+
+                findShopTask.match({
+                    Ok: (shop) => {
+                        expect(shop.name).toBe(shopData.name);
+                        expect(shop.description).toBe(shopData.description);
+                    },
+                    Err: (error) => {
+                        expect.fail(`Task should have returned a shop, got ${error}`);
+                    }
+                })
+            });
+
+            it('should return a NotFoundError for nonexistent shop', async () => {
+                const findShopTask = await shopRepo.getShop('f2e6e2c3-0a9b-4fd0-b75a-bc782511a622');
+
+                findShopTask.match({
+                    Ok: (shop) => {
+                        console.error('Unexpectedly found shop:', shop);
+                        expect.fail('Should not have found shop');
+                    },
+                    Err: (error) => {
+                        console.log('Expected error:', error);
+                        expect(error).toBeInstanceOf(NotFoundError);
+                    }
+                });
+            })            
+        })
     })
-}); // test
+});

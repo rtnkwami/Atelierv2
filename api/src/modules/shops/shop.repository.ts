@@ -1,5 +1,5 @@
 import { PrismaClient, Shops } from "@db-client/client.ts"
-import { DatabaseError } from "error.ts"
+import { DatabaseError, NotFoundError } from "error.ts"
 import Task, { tryOrElse } from 'true-myth/task'
 
 type CreateShopDto = {
@@ -9,6 +9,7 @@ type CreateShopDto = {
 
 export interface IShopRepository {
     createShop: (userId: string, shopData: CreateShopDto) => Task<Shops, DatabaseError>;
+    getShop: (shopId: string) => Task<Shops, NotFoundError | DatabaseError>;
 }
 
 
@@ -33,5 +34,26 @@ export const createShopRepository = ({ db }: dependencies): IShopRepository => (
 
                 return shop;
             }
-        )        
+        ),
+    getShop: (shopId) =>
+        tryOrElse(
+            (reason) => {
+                if (reason instanceof NotFoundError) {
+                    return reason;
+                }
+                return new DatabaseError(`Error getting shop "${ shopId }"`, { cause: reason });
+            },
+            async () => {
+                const shop = await db.shops.findUnique({
+                    where: {
+                        id: shopId
+                    }
+                });
+
+                if (!shop) {
+                    throw new NotFoundError(`Shop "${ shopId }" does not exist`);
+                }
+                return shop;
+            }
+        )
 })
