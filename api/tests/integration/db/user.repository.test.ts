@@ -1,7 +1,7 @@
 import { describe, beforeEach, it, expect, afterAll } from 'vitest';
 import createDiContainer from "../../../src/di.ts";
 import resetDb from '@utils/resetDb.ts'
-import { DatabaseError, NotFoundError, IntegrationTestError } from '../../../src/error.ts';
+import { DatabaseError, NotFoundError } from '../../../src/error.ts';
 
 describe('User Repository', async () => {
     const container = createDiContainer();
@@ -22,9 +22,8 @@ describe('User Repository', async () => {
                 name: 'John Doe',
                 email: 'jd@gmail.com',
                 avatar: 'https://funnypics.com/jojo.png'
-            })
-            .mapRejected(reason => new IntegrationTestError('Unexpected error during user creation test', { cause: reason }));
-    
+            });
+
             createUserTask.match({
                 Ok: (newUser) => {
                     expect(newUser).toMatchObject({
@@ -44,16 +43,16 @@ describe('User Repository', async () => {
 
     describe('user listing', () => {
         it('should get a user', async () => {
-            await userRepo.createUser({
+            const getUserTask = await userRepo.createUser({
                 id: '123456',
                 name: 'Mary Jane',
                 email: 'mj@outlook.com',
                 avatar: 'https://reallygoodlooking.com/mj.jpg'
+            })
+            .andThen(() => {
+                return userRepo.getUser('123456');
             });
 
-            const getUserTask = await userRepo.getUser('123456')
-                .mapRejected(reason => new IntegrationTestError('Unexpected error during get user test', { cause: reason }));
-            
             getUserTask.match({
                 Ok: (user) => {
                     expect(user).toMatchObject({
@@ -72,16 +71,12 @@ describe('User Repository', async () => {
 
         it('should return a NotFoundError on nonexistent user', async () => {
             const getUserTask = await userRepo.getUser('123456')
-                .mapRejected(reason => new IntegrationTestError('Unexpected error during get nonexistent user test', { cause: reason }));
             
             getUserTask.match({
-                Ok: (user) => {
-                    console.error('Unexpectedly found user:', user);
-                    expect.fail('Should not have found user');
-                },
+                Ok: () => { expect.fail('Should not have found user'); },
                 Err: (error) => {
                     console.log('Expected error:', error);
-                    expect(error.cause).toBeInstanceOf(NotFoundError);
+                    expect(error).toBeInstanceOf(NotFoundError);
                 }
             });
         });
@@ -98,7 +93,6 @@ describe('User Repository', async () => {
             .andThen((newUser) => {
                 return userRepo.assignRoleToUser(newUser.id, 'seller');
             })
-            .mapRejected(reason => new IntegrationTestError('Unexpected error during role assignment test', { cause: reason }));
     
             updateUserRolesTask.match({
                 Ok: (userWithRoles) => {
@@ -115,16 +109,12 @@ describe('User Repository', async () => {
     
         it('should throw a database error on failure', async () => {
             const getUserRolesTask = await userRepo.assignRoleToUser('12345', 'seller')
-                .mapRejected(reason => new IntegrationTestError('Unexpected error during database error test', { cause: reason }));
             
             getUserRolesTask.match({
-                Ok: (result) => {
-                    console.error('Unexpectedly succeeded:', result);
-                    expect.fail('Should have failed with DatabaseError');
-                },
+                Ok: () => { expect.fail('Should have failed with DatabaseError'); },
                 Err: (error) => {
                     console.log('Expected error:', error);
-                    expect(error.cause).toBeInstanceOf(DatabaseError);
+                    expect(error).toBeInstanceOf(DatabaseError);
                 }
             });
         });
@@ -133,7 +123,6 @@ describe('User Repository', async () => {
     describe('user auth actions', () => {
         it('should return a role given a role name', async () => {
             const getRoleTask = await userRepo.getRole('seller')
-                .mapRejected(reason => new IntegrationTestError('Unexpected error during get role test', { cause: reason }));
 
             getRoleTask.match({
                 Ok: (role) => {
@@ -150,16 +139,12 @@ describe('User Repository', async () => {
 
         it('should throw a not found error on nonexistent role', async () => {
             const getRoleTask = await userRepo.getRole('invalid_role')
-                .mapRejected(reason => new IntegrationTestError('Unexpected error during get invalid role test', { cause: reason }));
             
             getRoleTask.match({
-                Ok: (role) => {
-                    console.error('Unexpectedly found role:', role);
-                    expect.fail('Should not have found role');
-                },
+                Ok: () => { expect.fail('Should not have found role'); },
                 Err: (error) => {
                     console.log('Expected error:', error);
-                    expect(error.cause).toBeInstanceOf(NotFoundError);
+                    expect(error).toBeInstanceOf(NotFoundError);
                 }
             });
         })
