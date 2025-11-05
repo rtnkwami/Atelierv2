@@ -2,6 +2,7 @@ import { describe, beforeEach, it, expect, afterAll } from 'vitest';
 import createDiContainer from "../../../src/di.ts";
 import resetDb from '@utils/resetDb.ts'
 import { DatabaseError, NotFoundError } from '../../../src/error.ts';
+import { mockUser } from '../../mocks/firebase.mocks.ts';
 
 describe('User Repository', async () => {
     const container = createDiContainer();
@@ -17,24 +18,14 @@ describe('User Repository', async () => {
 
     describe('user creation', () => {
         it('should create new user', async () => {
-            const createUserTask = await userRepo.createUser({
-                id: "2d43frg5g53",
-                name: 'John Doe',
-                email: 'jd@gmail.com',
-                avatar: 'https://funnypics.com/jojo.png'
-            });
+            const createUserTask = await userRepo.createUser(mockUser);
 
             createUserTask.match({
                 Ok: (newUser) => {
-                    expect(newUser).toMatchObject({
-                        id: "2d43frg5g53",
-                        name: 'John Doe',
-                        email: 'jd@gmail.com',
-                        avatar: 'https://funnypics.com/jojo.png'
-                    });
+                    expect(newUser).toMatchObject(mockUser);
                 },
                 Err: (error) => {
-                    console.error('Failed to create user:', error);
+                    console.error('Error during user creation test', error);
                     expect.fail('User creation should have succeeded');
                 }
             });
@@ -43,27 +34,17 @@ describe('User Repository', async () => {
 
     describe('user listing', () => {
         it('should get a user', async () => {
-            const getUserTask = await userRepo.createUser({
-                id: '123456',
-                name: 'Mary Jane',
-                email: 'mj@outlook.com',
-                avatar: 'https://reallygoodlooking.com/mj.jpg'
-            })
+            const getUserTask = await userRepo.createUser(mockUser)
             .andThen(() => {
-                return userRepo.getUser('123456');
+                return userRepo.getUser(mockUser.id);
             });
 
             getUserTask.match({
                 Ok: (user) => {
-                    expect(user).toMatchObject({
-                        id: '123456',
-                        name: 'Mary Jane',
-                        email: 'mj@outlook.com',
-                        avatar: 'https://reallygoodlooking.com/mj.jpg'
-                    });
+                    expect(user).toMatchObject(mockUser);
                 },
                 Err: (error) => {
-                    console.error('Failed to get user:', error);
+                    console.error('Error during user listing test', error);
                     expect.fail('Get user should have succeeded');
                 }
             });
@@ -75,7 +56,6 @@ describe('User Repository', async () => {
             getUserTask.match({
                 Ok: () => { expect.fail('Should not have found user'); },
                 Err: (error) => {
-                    console.log('Expected error:', error);
                     expect(error).toBeInstanceOf(NotFoundError);
                 }
             });
@@ -84,15 +64,10 @@ describe('User Repository', async () => {
     
     describe('user updating', () => {
         it('should update user roles', async () => {
-            const updateUserRolesTask = await userRepo.createUser({
-                id: '123456',
-                name: 'Mary Jane',
-                email: 'mj@outlook.com',
-                avatar: 'https://reallygoodlooking.com/mj.jpg'
-            })
-            .andThen((newUser) => {
-                return userRepo.assignRoleToUser(newUser.id, 'seller');
-            })
+            const updateUserRolesTask = await userRepo.createUser(mockUser)
+                .andThen((newUser) => {
+                    return userRepo.assignRoleToUser(newUser.id, 'seller');
+                })
     
             updateUserRolesTask.match({
                 Ok: (userWithRoles) => {
@@ -101,7 +76,7 @@ describe('User Repository', async () => {
                     expect(userWithRoles.roles).toHaveLength(2);
                 },
                 Err: (error) => {
-                    console.error('Failed to update user roles:', error);
+                    console.error('Error during user role update test', error);
                     expect.fail('Role assignment should have succeeded');
                 }
             });
@@ -113,7 +88,6 @@ describe('User Repository', async () => {
             getUserRolesTask.match({
                 Ok: () => { expect.fail('Should have failed with DatabaseError'); },
                 Err: (error) => {
-                    console.log('Expected error:', error);
                     expect(error).toBeInstanceOf(DatabaseError);
                 }
             });
@@ -131,7 +105,7 @@ describe('User Repository', async () => {
                     expect(role.name).toBe('seller');
                 },
                 Err: (error) => {
-                    console.error('Failed to get role:', error);
+                    console.error('Error during role listing test', error);
                     expect.fail('Get role should have succeeded');
                 }
             });
@@ -143,7 +117,6 @@ describe('User Repository', async () => {
             getRoleTask.match({
                 Ok: () => { expect.fail('Should not have found role'); },
                 Err: (error) => {
-                    console.log('Expected error:', error);
                     expect(error).toBeInstanceOf(NotFoundError);
                 }
             });
