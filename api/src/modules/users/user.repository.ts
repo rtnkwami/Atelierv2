@@ -3,18 +3,18 @@ import { PrismaClient } from "@db-client/client.ts";
 import { UsersCreateInput } from "@db-client/models.ts";
 import type { Roles, Users } from "@db-client/client.ts";
 import Task, { tryOrElse } from "true-myth/task";
-import { TransactionClient } from "@db-client/internal/prismaNamespace.ts";
+import { getTxOrDbClient } from "async.context.ts";
 
 export interface IUserRepository {
-    createUser: (userData: UsersCreateInput, tx?: TransactionClient) => Task<Users, DatabaseError>;
-    getUser: (userId: string, tx?: TransactionClient) => Task<Users, NotFoundError | DatabaseError>;
-    assignRoleToUser: (userId: string, roleName: string, tx?: TransactionClient) => Task<{
+    createUser: (userData: UsersCreateInput) => Task<Users, DatabaseError>;
+    getUser: (userId: string) => Task<Users, NotFoundError | DatabaseError>;
+    assignRoleToUser: (userId: string, roleName: string) => Task<{
         id: string,
         roles: {
             name: string
         }[] 
     }, DatabaseError>;
-    getRole: (roleName: string, tx?: TransactionClient) => Task<Roles, NotFoundError | DatabaseError>;
+    getRole: (roleName: string) => Task<Roles, NotFoundError | DatabaseError>;
 }
 
 type dependencies = {
@@ -22,7 +22,7 @@ type dependencies = {
 }
 
 export const createUserRepository = ({ db }: dependencies): IUserRepository => ({    
-    getUser: (userId, tx) =>
+    getUser: (userId) =>
         tryOrElse(
             (reason) => {
                 if (reason instanceof NotFoundError) {
@@ -31,7 +31,7 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 return new DatabaseError(`Database query failed: ${ String(reason) }`);
             },
             async () => {
-                const client = tx ?? db;
+                const client = getTxOrDbClient(db);
                 const user = await client.users.findUnique({
                     where: { id: userId }
                 });
@@ -42,11 +42,11 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 return user;
             }
         ),
-    createUser: (userData, tx) =>
+    createUser: (userData) =>
         tryOrElse(
             (reason) => new DatabaseError('Error creating user', { cause: reason }),
             async () => {
-                const client = tx ?? db;
+                const client = getTxOrDbClient(db);
                 const newUser = await client.users.create({
                     data: {
                         id: userData.id,
@@ -66,13 +66,13 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 return newUser;
             }
         ),
-    assignRoleToUser: (userId, roleName, tx) =>
+    assignRoleToUser: (userId, roleName) =>
         tryOrElse(
             (reason) => {
                 return new DatabaseError('Error getting user roles', { cause: reason })
             },
             async () => {
-                const client = tx ?? db;
+                const client = getTxOrDbClient(db);
                 const userRoles = await client.users.update({
                     where: { id: userId },
                     data: {
@@ -89,14 +89,14 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 return userRoles;
             }
         ),
-        getRole: (roleName, tx) =>
+        getRole: (roleName) =>
             tryOrElse(
                 (reason) => {
                     if (reason instanceof NotFoundError) { return reason };
                     return new DatabaseError('Error getting role', { cause: reason });
                 },
                 async () => {
-                    const client = tx ?? db;
+                    const client = getTxOrDbClient(db);
                     const role = await client.roles.findUnique({
                         where: {
                             name: roleName

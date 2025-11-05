@@ -1,5 +1,5 @@
 import { PrismaClient, Shops } from "@db-client/client.ts"
-import { TransactionClient } from "@db-client/internal/prismaNamespace.ts";
+import { getTxOrDbClient } from "async.context.ts";
 import { DatabaseError, NotFoundError } from "error.ts"
 import Task, { tryOrElse } from 'true-myth/task'
 
@@ -9,8 +9,8 @@ type CreateShopDto = {
 }
 
 export interface IShopRepository {
-    createShop: (userId: string, shopData: CreateShopDto, tx?: TransactionClient) => Task<Shops, DatabaseError>;
-    getShop: (shopId: string, tx?: TransactionClient) => Task<Shops, NotFoundError | DatabaseError>;
+    createShop: (userId: string, shopData: CreateShopDto) => Task<Shops, DatabaseError>;
+    getShop: (shopId: string) => Task<Shops, NotFoundError | DatabaseError>;
 }
 
 
@@ -19,11 +19,11 @@ type dependencies = {
 }
 
 export const createShopRepository = ({ db }: dependencies): IShopRepository => ({
-    createShop: (userId, shopData, tx) =>
+    createShop: (userId, shopData) =>
         tryOrElse(
             (reason) => new DatabaseError('Error creating shop', { cause: reason }),
             async () => {
-                const client = tx ?? db;
+                const client = getTxOrDbClient(db);
                 const shop = await client.shops.create({
                     data: {
                         name: shopData.name,
@@ -37,7 +37,7 @@ export const createShopRepository = ({ db }: dependencies): IShopRepository => (
                 return shop;
             }
         ),
-    getShop: (shopId, tx) =>
+    getShop: (shopId) =>
         tryOrElse(
             (reason) => {
                 if (reason instanceof NotFoundError) {
@@ -46,7 +46,7 @@ export const createShopRepository = ({ db }: dependencies): IShopRepository => (
                 return new DatabaseError(`Error getting shop "${ shopId }"`, { cause: reason });
             },
             async () => {
-                const client = tx ?? db;
+                const client = getTxOrDbClient(db);
                 const shop = await client.shops.findUnique({
                     where: {
                         id: shopId
