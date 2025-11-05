@@ -12,6 +12,7 @@ import createUserRouter from "modules/users/user.routes.ts";
 import createAPI from "app.ts";
 import { verifyJwt } from "middleware/verifyJwt.ts";
 import { createShopRepository, IShopRepository } from "modules/shops/shop.repository.ts";
+import { createShopService, IShopService } from "modules/shops/shop.service.ts";
 
 type Cradle = {
     db: PrismaClient;
@@ -21,6 +22,7 @@ type Cradle = {
     tokenVerificationMiddleware: RequestHandler
     
     userService: IUserService;
+    shopService: IShopService;
 
     userController: IUserController;
     
@@ -44,6 +46,7 @@ export default function createDiContainer (): AwilixContainer<Cradle> {
         tokenVerificationMiddleware: asValue(verifyJwt),
 
         userService: asFunction(createUserService).scoped(),
+        shopService: asFunction(createShopService).scoped(),
         
         userController: asFunction(createUserController).scoped(),
         
