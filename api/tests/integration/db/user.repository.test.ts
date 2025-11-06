@@ -18,9 +18,9 @@ describe('User Repository', async () => {
 
     describe('user creation', () => {
         it('should create new user', async () => {
-            const createUserTask = await userRepo.createUser(mockUser);
+            const task = await userRepo.createUser(mockUser);
 
-            createUserTask.match({
+            task.match({
                 Ok: (newUser) => {
                     expect(newUser).toMatchObject(mockUser);
                 },
@@ -34,12 +34,10 @@ describe('User Repository', async () => {
 
     describe('user listing', () => {
         it('should get a user', async () => {
-            const getUserTask = await userRepo.createUser(mockUser)
-            .andThen(() => {
-                return userRepo.getUser(mockUser.id);
-            });
+            const task = await userRepo.createUser(mockUser)
+                .andThen(() => userRepo.getUser(mockUser.id));
 
-            getUserTask.match({
+            task.match({
                 Ok: (user) => {
                     expect(user).toMatchObject(mockUser);
                 },
@@ -51,9 +49,9 @@ describe('User Repository', async () => {
         });
 
         it('should return a NotFoundError on nonexistent user', async () => {
-            const getUserTask = await userRepo.getUser('123456')
+            const task = await userRepo.getUser('123456')
             
-            getUserTask.match({
+            task.match({
                 Ok: () => { expect.fail('Should not have found user'); },
                 Err: (error) => {
                     expect(error).toBeInstanceOf(NotFoundError);
@@ -64,12 +62,10 @@ describe('User Repository', async () => {
     
     describe('user updating', () => {
         it('should update user roles', async () => {
-            const updateUserRolesTask = await userRepo.createUser(mockUser)
-                .andThen((newUser) => {
-                    return userRepo.assignRoleToUser(newUser.id, 'seller');
-                })
+            const task = await userRepo.createUser(mockUser)
+                .andThen((newUser) => userRepo.assignRoleToUser(newUser.id, 'seller'))
     
-            updateUserRolesTask.match({
+            task.match({
                 Ok: (userWithRoles) => {
                     expect(userWithRoles).toHaveProperty('id');
                     expect(userWithRoles).toHaveProperty('roles');
@@ -83,9 +79,9 @@ describe('User Repository', async () => {
         })
     
         it('should throw a database error on failure', async () => {
-            const getUserRolesTask = await userRepo.assignRoleToUser('12345', 'seller')
+            const task = await userRepo.assignRoleToUser('12345', 'seller')
             
-            getUserRolesTask.match({
+            task.match({
                 Ok: () => { expect.fail('Should have failed with DatabaseError'); },
                 Err: (error) => {
                     expect(error).toBeInstanceOf(DatabaseError);
@@ -96,9 +92,9 @@ describe('User Repository', async () => {
 
     describe('user auth actions', () => {
         it('should return a role given a role name', async () => {
-            const getRoleTask = await userRepo.getRole('seller')
+            const task = await userRepo.getRole('seller')
 
-            getRoleTask.match({
+            task.match({
                 Ok: (role) => {
                     expect(role).toHaveProperty('id');
                     expect(role).toHaveProperty('name');
@@ -112,9 +108,9 @@ describe('User Repository', async () => {
         });
 
         it('should throw a not found error on nonexistent role', async () => {
-            const getRoleTask = await userRepo.getRole('invalid_role')
+            const task = await userRepo.getRole('invalid_role')
             
-            getRoleTask.match({
+            task.match({
                 Ok: () => { expect.fail('Should not have found role'); },
                 Err: (error) => {
                     expect(error).toBeInstanceOf(NotFoundError);

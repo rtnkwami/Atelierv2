@@ -27,9 +27,9 @@ describe('Shop Service', () => {
             };
             vi.spyOn(shopRepo, 'createShop').mockReturnValue(Task.resolve(mockShop));
 
-            const resultTask = await shopService.createShopForUser(mockDecodedIdToken);
+            const task = await shopService.createShopForUser(mockDecodedIdToken);
 
-            resultTask.match({
+            task.match({
                 Ok: (shop) => {
                     expect(shop).toEqual(mockShop);
                     expect(shopRepo.createShop).toHaveBeenCalledWith(
@@ -45,9 +45,9 @@ describe('Shop Service', () => {
             vi.spyOn(shopRepo, 'createShop')
                 .mockReturnValue(Task.reject(new Error('DB write failed')));
 
-            const failedTask = await shopService.createShopForUser(mockDecodedIdToken);
+            const task = await shopService.createShopForUser(mockDecodedIdToken);
 
-            failedTask.match({
+            task.match({
                 Ok: () => expect.fail('Task should have failed'),
                 Err: (error) => {
                     expect(error).toBeInstanceOf(ShopCreationError);

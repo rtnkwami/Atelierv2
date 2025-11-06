@@ -23,9 +23,9 @@ describe('User Service ', () => {
             vi.spyOn(userRepo, 'getUser')
                 .mockReturnValue(Task.resolve(mockUser)
             );
-            const syncUserToDbTask = await userService.getOrCreateUser(mockDecodedIdToken);
+            const task = await userService.getOrCreateUser(mockDecodedIdToken);
             
-            syncUserToDbTask.match({
+            task.match({
                 Ok: (user) => { expect(user).toMatchObject(mockUser) },
                 Err: (error) => {
                     console.error('Error during user creation or listing test', error)
@@ -42,9 +42,9 @@ describe('User Service ', () => {
             vi.spyOn(userRepo, 'createUser').mockReturnValue(
                 Task.resolve(mockUser)
             )
-            const syncUserToDbTask = await userService.getOrCreateUser(mockDecodedIdToken);
+            const task = await userService.getOrCreateUser(mockDecodedIdToken);
 
-            syncUserToDbTask.match({
+            task.match({
                 Ok: (user) => { 
                     expect(userRepo.getUser).toHaveBeenCalled()
                     expect(userRepo.createUser).toHaveBeenCalledWith(mockUser);
@@ -62,9 +62,9 @@ describe('User Service ', () => {
             vi.spyOn(userRepo, 'getUser')
                 .mockReturnValue(Task.reject(new Error('Test Error'))
             );
-            const syncUserToDbTask = await userService.getOrCreateUser(mockDecodedIdToken);
+            const task = await userService.getOrCreateUser(mockDecodedIdToken);
 
-            syncUserToDbTask.match({
+            task.match({
                 Ok: () => { expect.fail('Task should have failed.') },
                 Err: (error) => { 
                     expect(error).toBeInstanceOf(UserSyncError); }
@@ -131,9 +131,9 @@ describe('User Service ', () => {
             vi.spyOn(txUtils, 'runWithTransaction')
                 .mockReturnValue(Task.reject(new Error('Test Error')));
 
-            const failedShopCreateTask = await userService.upgradeUserToSeller(mockDecodedIdToken);
+            const task = await userService.upgradeUserToSeller(mockDecodedIdToken);
 
-            failedShopCreateTask.match({
+            task.match({
                 Ok: () => { expect.fail('Task should have failed') },
                 Err: (error) => { expect(error).toBeInstanceOf(SellerUpgradeError) }
             })

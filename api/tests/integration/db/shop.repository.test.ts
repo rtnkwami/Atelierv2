@@ -26,9 +26,9 @@ describe('Shop repository', async () => {
     
     describe('shop creation', () => {
         it('should return a created shop', async () => {
-            const createShopTask = await shopRepo.createShop(mockUser.id, shopData);
+            const task = await shopRepo.createShop(mockUser.id, shopData);
 
-            createShopTask.match({
+            task.match({
                 Ok: (shop) => {
                     expect(shop.usersId).toEqual(mockUser.id);
                     expect(shop.name).toEqual(shopData.name);
@@ -42,9 +42,9 @@ describe('Shop repository', async () => {
         });
 
         it('should return a database error on failure', async () => {
-            const createShopTask = await shopRepo.createShop('nonexistent user id', shopData);
+            const task = await shopRepo.createShop('nonexistent user id', shopData);
 
-            createShopTask.match({
+            task.match({
                 Ok: () => { expect.fail('Task should have failed'); },
                 Err: (error) => {
                     expect(error).toBeInstanceOf(DatabaseError);
@@ -54,10 +54,10 @@ describe('Shop repository', async () => {
         
         describe('shop listing', () => {
             it('should return a single shop', async () => {
-                const findShopTask = await shopRepo.createShop(mockUser.id, shopData)
+                const task = await shopRepo.createShop(mockUser.id, shopData)
                     .andThen((shop) => shopRepo.getShop(shop.id))
 
-                findShopTask.match({
+                task.match({
                     Ok: (shop) => {
                         expect(shop.name).toBe(shopData.name);
                         expect(shop.description).toBe(shopData.description);
@@ -71,9 +71,9 @@ describe('Shop repository', async () => {
 
             it('should return a NotFoundError for nonexistent shop', async () => {
                 // getShop requires a valid uuid, otherwise test will fail with database error
-                const findShopTask = await shopRepo.getShop('f2e6e2c3-0a9b-4fd0-b75a-bc782511a622');
+                const task = await shopRepo.getShop('f2e6e2c3-0a9b-4fd0-b75a-bc782511a622');
 
-                findShopTask.match({
+                task.match({
                     Ok: () => { expect.fail('Should not have found shop'); },
                     Err: (error) => {
                         expect(error).toBeInstanceOf(NotFoundError);
