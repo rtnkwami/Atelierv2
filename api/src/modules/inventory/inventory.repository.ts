@@ -1,6 +1,6 @@
 import { PrismaClient, Products } from "@db-client/client.ts"
 import { getTxOrDbClient } from "async.context.ts";
-import { DatabaseError } from "error.ts";
+import { DatabaseError, NotFoundError } from "error.ts";
 import { Logger } from "pino";
 import { Task } from "true-myth";
 import { tryOrElse } from "true-myth/task";
@@ -16,6 +16,7 @@ export interface IInventoryRepository {
             stock: number;
             images?: string[];
         }) => Task<Products, DatabaseError>;
+        getUniqueProduct: (productId: string) => Task<Products, NotFoundError | DatabaseError>;
     }
 }
 
@@ -52,7 +53,25 @@ export const createInventoryRepository = ({ db, baseLogger }: dependencies): IIn
                     })
                 }
             ),
-            
+            getUniqueProduct: (productId) => tryOrElse(
+                (reason) => {
+                    if (reason instanceof NotFoundError) {
+                        return reason;
+                    }
+                    return new DatabaseError(`Error getting product "${ productId }"`, { cause: reason })
+                },
+                async () => {
+                    const client = getTxOrDbClient(db);
+                    const product = await client.products.findUnique({
+                        where: { id: productId }
+                    });
+
+                    if (!product) {
+                        throw new NotFoundError(`Product "${ productId }" does not exist`)
+                    }
+                    return product;
+                }
+            )
         }
     }
 }
