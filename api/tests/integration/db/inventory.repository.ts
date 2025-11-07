@@ -1,11 +1,12 @@
 import resetDb from '@utils/resetDb.ts';
 import createDiContainer from 'di.ts'
-import { beforeEach, afterAll, it, expect, describe } from 'vitest'
+import { beforeEach, afterAll, it, expect, describe, afterEach } from 'vitest'
 import { mockDecodedIdToken } from '../../mocks/firebase.mocks.ts';
-import { Shops } from '@db-client/client.ts';
+import { Products, Shops } from '@db-client/client.ts';
 import { mockProduct } from '../../mocks/product.ts';
 import { NotFoundError } from 'error.ts';
 import { randomUUID } from 'crypto';
+import { generateFakeProducts } from '@utils/generateFakes.ts';
 
 describe('Inventory Tests', () => {
     const container = createDiContainer();
@@ -72,6 +73,112 @@ describe('Inventory Tests', () => {
                 Err: (error) => {
                     expect(error).toBeInstanceOf(NotFoundError);
                 }
+            })
+        })
+
+        describe('Product Listing', () => {
+            beforeEach(async () => {
+                const fakeProducts = [
+                    { name: 'Test Laptop', category: 'Electronics', price: 50, stock: 10 },
+                    { name: 'Gaming Mouse', category: 'Electronics', price: 150, stock: 25 },
+                    { name: 'Office Chair', category: 'Furniture', price: 200, stock: 5 }
+                ]
+                
+                for (let index = 0; index < fakeProducts.length; index++) {
+                    await inventoryRepo.shops.createProduct(
+                        shop.id,
+                        generateFakeProducts(fakeProducts[index])
+                    );
+                }
+            });
+
+            afterEach(async () => {
+                await resetDb(db);
+            })
+
+            it('should list all products if no filters are given', async () => {
+                const task = await inventoryRepo.shops.getProducts();
+
+                task.match({
+                    Ok: (productList) => {
+                        expect(productList.length).not.toBe(0);
+                        expect(productList[0]).toHaveProperty('name');
+                    },
+                    Err: (error) => {
+                        console.log(error);
+                        expect.fail('Task should have succeeded')
+                    }
+                })
+            });
+
+            it('should list products based on a given filter', async () => {
+                const testScenarios = [
+                    {
+                        filter: { name: 'test' },
+                        description: 'name filter',
+                        assertions: (productList: Products[]) => {
+                            expect(productList.length).toBe(1);
+                            expect(productList.every(
+                                p => p.name.toLowerCase().includes('test'))
+                            ).toBe(true);
+                        }
+                    },
+                    {
+                        filter: { category: 'Electronics' },
+                        description: 'category filter',
+                        assertions: (productList: Products[]) => {
+                            expect(productList.length).toBe(2);
+                            expect(productList.every(
+                                p => p.category === 'Electronics')
+                            ).toBe(true);
+                        }
+                    },
+                    {
+                        filter: { price: { min: 100, max: 250 } },
+                        description: 'price filter',
+                        assertions: (productList: Products[]) => {
+                            expect(productList.length).toBe(2);
+                            expect(productList.every(
+                                p => p.price >= 100 && p.price <= 250)
+                            ).toBe(true);
+                        }
+                    },
+                    {
+                        filter: { stock: { min: 5, max: 50 } },
+                        description: 'stock filter',
+                        assertions: (productList: Products[]) => {
+                            expect(productList.length).toBe(3);
+                            expect(productList.every(
+                                p => p.stock >= 5 && p.stock <= 50)
+                            ).toBe(true);
+                        }
+                    },
+                ];
+
+                for (const scenario of testScenarios) {
+                    const task = await inventoryRepo.shops.getProducts(scenario.filter);
+
+                    task.match({
+                        Ok: (productList) => {
+                            scenario.assertions(productList);
+                        },
+                        Err: (error) => {
+                            console.log(error);
+                            expect.fail(`Task should have succeeded for ${scenario.description}`);
+                        }
+                    });
+                }
+            });
+
+            it('should throw a not found error if no products are returned', async () => {
+                await resetDb(db);
+
+                const task = await inventoryRepo.shops.getProducts();
+
+                task.match({
+                    Ok: () => expect.fail('Task should have failed'),
+                    Err: (error) => expect(error).toBeInstanceOf(NotFoundError)
+                })
             })
         })
     })

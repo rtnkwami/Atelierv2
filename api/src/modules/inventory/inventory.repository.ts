@@ -1,4 +1,5 @@
 import { PrismaClient, Products } from "@db-client/client.ts"
+import { QueryMode } from "@db-client/internal/prismaNamespace.ts";
 import { getTxOrDbClient } from "async.context.ts";
 import { DatabaseError, NotFoundError } from "error.ts";
 import { Logger } from "pino";
@@ -17,6 +18,16 @@ export interface IInventoryRepository {
             images?: string[];
         }) => Task<Products, DatabaseError>;
         getUniqueProduct: (productId: string) => Task<Products, NotFoundError | DatabaseError>;
+        getProducts: (filter?: {
+            name?: string;
+            category?: string;
+            price?: { min: number; max: number };
+            stock?: { min: number; max: number };
+            date?: { from: Date, to: Date };
+        }, pagination?: {
+            offset: number;
+            limit: number;
+        }) => Task<Products[], NotFoundError | DatabaseError>;
     }
 }
 
@@ -70,6 +81,55 @@ export const createInventoryRepository = ({ db, baseLogger }: dependencies): IIn
                         throw new NotFoundError(`Product "${ productId }" does not exist`)
                     }
                     return product;
+                }
+            ),
+            getProducts: (filter, pagination) => tryOrElse(
+                (reason) => {
+                    if (reason instanceof NotFoundError) {
+                        return reason;
+                    }
+                    return new DatabaseError(`No products found for current filter ${ filter }`);
+                },
+                async () => {
+                    const client = getTxOrDbClient(db);
+                    let productList: Products[];
+
+                    if (!filter) {
+                        productList = await client.products.findMany();
+                    }
+
+                    /** If you see something like ...(filter?.attribute && { attribute: filter.attribute }),
+                     * it means the same thing as if (filter?.attribute) { whereClause.attribute = filter.attribute }
+                     * 
+                     * This syntax is simply there to make the code less verbose.
+                     */
+                    const whereClause = {
+                        ...(filter?.name && { 
+                            name: { contains: filter.name, mode: 'insensitive' as QueryMode }
+                        }),
+                        ...(filter?.category && { category: filter.category }),
+                        ...(filter?.price && {
+                            price: { gte: filter.price.min, lte: filter.price.max },
+                        }),
+                        ...(filter?.stock && {
+                            stock: { gte: filter.stock.min, lte: filter.stock.max }
+                        }),
+                        ...(filter?.date && {
+                            createdAt: { gte: filter.date.from, lte: filter.date.to },
+                        }),
+                        };
+
+                    productList = await client.products.findMany({
+                        where: whereClause,
+                        ...(pagination?.offset !== undefined && { skip: pagination.offset }),
+                        ...(pagination?.limit !== undefined && { take: pagination.limit }),
+                    })
+
+                    if (productList.length === 0) {
+                        throw new NotFoundError('No products found for current filter');
+                    }
+
+                    return productList;
                 }
             )
         }
