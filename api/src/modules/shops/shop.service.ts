@@ -8,7 +8,7 @@ import { generateDefaultShopName } from "@utils/defaultNames.ts"
 
 export interface IShopService {
     createShopForUser: (userData: DecodedIdToken) => Task<Shops, ShopCreationError>;
-    getSellerShop: (userId: string) => Task<Shops, NonExistentShopError>;
+    getShopForSeller: (userId: string) => Task<Shops, NonExistentShopError>;
 }
 
 type dependencies = {
@@ -35,7 +35,7 @@ export const createShopService = ({ shopRepo, baseLogger }: dependencies): IShop
                 })
         },
         
-        getSellerShop: (sellerId) => {
+        getShopForSeller: (sellerId) => {
             return shopRepo.getSellerShop(sellerId)
                 .mapRejected(reason => {
                     return new NonExistentShopError('Error getting shop', { cause: reason })

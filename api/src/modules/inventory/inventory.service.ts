@@ -3,7 +3,7 @@ import { CreateProductFields, IInventoryRepository } from "./inventory.repositor
 import { ProductCreationError } from "error.ts";
 import Task from "true-myth/task";
 import { Products } from "@db-client/client.ts";
-import { IShopRepository } from "modules/shops/shop.repository.ts";
+import { IShopService } from "modules/shops/shop.service.ts";
 
 export interface IInventoryService {
     createProductForShop: (sellerId: string, productData: CreateProductFields) => Task<Products, ProductCreationError>
@@ -11,23 +11,23 @@ export interface IInventoryService {
 
 type dependencies = {
     inventoryRepo: IInventoryRepository;
-    shopRepo: IShopRepository;
+    shopService: IShopService
     baseLogger: Logger;
 }
 
-export const createInventoryService = ({ inventoryRepo, baseLogger, shopRepo }: dependencies): IInventoryService => {
+export const createInventoryService = ({ inventoryRepo, baseLogger, shopService }: dependencies): IInventoryService => {
     const inventoryServiceLogger = baseLogger.child({ module: "inventory", layer: "service" });
 
     return {
         createProductForShop: (sellerId, productData) => {
-            return shopRepo.getSellerShop(sellerId)
+            return shopService.getShopForSeller(sellerId)
                 .andThen((shop) => inventoryRepo.createProduct(shop.id, productData))
                 .mapRejected((reason) => {
                     inventoryServiceLogger.error(reason, `Error creating product for seller ${ sellerId }`)
                     return new ProductCreationError('Error creating product for shop',  { cause: reason });
                 })
         },
-        
+
             
     }
 
