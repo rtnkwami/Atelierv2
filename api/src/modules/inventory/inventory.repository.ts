@@ -3,28 +3,32 @@ import { QueryMode } from "@db-client/internal/prismaNamespace.ts";
 import { getTxOrDbClient } from "async.context.ts";
 import { DatabaseError, NotFoundError } from "error.ts";
 import { Logger } from "pino";
-import { Task } from "true-myth";
+import Task from "true-myth/task";
 import { tryOrElse } from "true-myth/task";
 
+export type CreateProductFields = {
+    name: string;
+    short_description: string;
+    long_description?: string;
+    category: string;
+    price: number;
+    stock: number;
+    images?: string[];
+}
+
+export type ProductSearchFilters = {
+    name: string;
+    category: string;
+    price: { min: number; max: number };
+    stock: { min: number; max: number };
+    date: { from: Date, to: Date };
+    shopId: string
+}
+
 export interface IInventoryRepository {
-    createProduct: (shopId: string, productData: {
-        name: string;
-        short_description: string;
-        long_description: string;
-        category: string;
-        price: number;
-        stock: number;
-        images?: string[];
-    }) => Task<Products, DatabaseError>;
+    createProduct: (shopId: string, productData: CreateProductFields) => Task<Products, DatabaseError>;
     getUniqueProduct: (productId: string, shopId?: string) => Task<Products, NotFoundError | DatabaseError>;
-    getProducts: (filter?: Partial<{
-        name: string;
-        category: string;
-        price: { min: number; max: number };
-        stock: { min: number; max: number };
-        date: { from: Date, to: Date };
-        shopId: string
-    }>, pagination?: {
+    getProducts: (filter?: Partial<ProductSearchFilters>, pagination?: {
         offset: number;
         limit: number;
     }) => Task<Products[], NotFoundError | DatabaseError>;
