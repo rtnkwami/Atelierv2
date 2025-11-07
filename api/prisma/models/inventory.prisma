@@ -10,7 +10,9 @@ model Products {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   Shops             Shops           @relation(fields: [shopsId], references: [id])
-  shopsId           String          @unique @db.Uuid
+  shopsId           String          @db.Uuid
   OrderProducts     OrderProducts[]
   ProductViews      ProductViews[]
+
+  @@unique([id, shopsId])
 }
