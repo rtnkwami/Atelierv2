@@ -17,17 +17,19 @@ export interface IInventoryRepository {
             stock: number;
             images?: string[];
         }) => Task<Products, DatabaseError>;
-        getUniqueProduct: (productId: string) => Task<Products, NotFoundError | DatabaseError>;
-        getProducts: (filter?: {
-            name?: string;
-            category?: string;
-            price?: { min: number; max: number };
-            stock?: { min: number; max: number };
-            date?: { from: Date, to: Date };
-        }, pagination?: {
+        getUniqueProduct: (productId: string, shopId?: string) => Task<Products, NotFoundError | DatabaseError>;
+        getProducts: (filter?: Partial<{
+            name: string;
+            category: string;
+            price: { min: number; max: number };
+            stock: { min: number; max: number };
+            date: { from: Date, to: Date };
+            shopId: string
+        }>, pagination?: {
             offset: number;
             limit: number;
         }) => Task<Products[], NotFoundError | DatabaseError>;
+        updateProduct: (productId: string, updateData: Partial<Products>) => Task<Products, DatabaseError>
     }
 }
 
@@ -44,7 +46,7 @@ export const createInventoryRepository = ({ db, baseLogger }: dependencies): IIn
         shops: {
             createProduct: (shopId, productData) => tryOrElse(
                 (reason) => {
-                    inventoryRepoLogger.error({ error: reason }, 'Error creating product for shop')
+                    inventoryRepoLogger.error(reason, 'Error creating product for shop')
                     return new DatabaseError(`Error creating product for shop ${shopId}`, { cause: reason })
                 },
                 async () => {
@@ -64,17 +66,21 @@ export const createInventoryRepository = ({ db, baseLogger }: dependencies): IIn
                     })
                 }
             ),
-            getUniqueProduct: (productId) => tryOrElse(
+            getUniqueProduct: (productId, shopId) => tryOrElse(
                 (reason) => {
                     if (reason instanceof NotFoundError) {
                         return reason;
                     }
+                    inventoryRepoLogger.error(reason, `Error getting product "${ productId }"`)
                     return new DatabaseError(`Error getting product "${ productId }"`, { cause: reason })
                 },
                 async () => {
                     const client = getTxOrDbClient(db);
                     const product = await client.products.findUnique({
-                        where: { id: productId }
+                        where: { 
+                            id: productId,
+                            ...(shopId && { shopsId: shopId })
+                        }
                     });
 
                     if (!product) {
@@ -88,6 +94,7 @@ export const createInventoryRepository = ({ db, baseLogger }: dependencies): IIn
                     if (reason instanceof NotFoundError) {
                         return reason;
                     }
+                    inventoryRepoLogger.error(reason, 'Error getting products');
                     return new DatabaseError(`No products found for current filter ${ filter }`);
                 },
                 async () => {
@@ -117,6 +124,7 @@ export const createInventoryRepository = ({ db, baseLogger }: dependencies): IIn
                         ...(filter?.date && {
                             createdAt: { gte: filter.date.from, lte: filter.date.to },
                         }),
+                        ...(filter?.shopId && { shopsId: filter.shopId })
                         };
 
                     productList = await client.products.findMany({
@@ -130,6 +138,23 @@ export const createInventoryRepository = ({ db, baseLogger }: dependencies): IIn
                     }
 
                     return productList;
+                }
+            ),
+            updateProduct: (productId, productData) => tryOrElse(
+                (reason) => {
+                    inventoryRepoLogger.error(reason, `Error updating product "${ productId }"`);
+                    return new DatabaseError(`Error updating product "${ productId }"`, { cause: reason })
+                },
+                async () => {
+                    const client = getTxOrDbClient(db);
+                    const updatedProduct = await client.products.update({
+                        where: {
+                            id: productId
+                        },
+                        data: productData
+                    })
+
+                    return updatedProduct;
                 }
             )
         }
