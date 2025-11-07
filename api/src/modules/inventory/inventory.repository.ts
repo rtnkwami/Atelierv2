@@ -29,7 +29,8 @@ export interface IInventoryRepository {
             offset: number;
             limit: number;
         }) => Task<Products[], NotFoundError | DatabaseError>;
-        updateProduct: (productId: string, updateData: Partial<Products>) => Task<Products, DatabaseError>
+        updateProduct: (productId: string, updateData: Partial<Products>) => Task<Products, DatabaseError>;
+        deleteProduct: (productId: string) => Task<Products, DatabaseError>
     }
 }
 
@@ -155,6 +156,22 @@ export const createInventoryRepository = ({ db, baseLogger }: dependencies): IIn
                     })
 
                     return updatedProduct;
+                }
+            ),
+            deleteProduct: (productId) => tryOrElse(
+                (reason) => {
+                    inventoryRepoLogger.error(reason, `Error deleting product "${ productId }"`);
+                    return new DatabaseError(`Error deleting product ${ productId }`, { cause: reason })
+                },
+                async () => {
+                    const client = getTxOrDbClient(db);
+                    const deletedProduct = await client.products.delete({
+                        where: {
+                            id: productId
+                        }
+                    });
+
+                    return deletedProduct;
                 }
             )
         }
