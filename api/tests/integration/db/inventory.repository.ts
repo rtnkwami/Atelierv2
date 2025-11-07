@@ -32,7 +32,7 @@ describe('Inventory Tests', () => {
         })
         
         it('should create products', async () => {
-            const task = await inventoryRepo.shops.createProduct(shop.id, mockProduct);
+            const task = await inventoryRepo.createProduct(shop.id, mockProduct);
             
             task.match({
                 Ok: (product) => {
@@ -48,8 +48,8 @@ describe('Inventory Tests', () => {
         })
 
         it('should get a unique product', async () => {
-            const task = await inventoryRepo.shops.createProduct(shop.id, mockProduct)
-                .andThen((product) => inventoryRepo.shops.getUniqueProduct(product.id));
+            const task = await inventoryRepo.createProduct(shop.id, mockProduct)
+                .andThen((product) => inventoryRepo.getUniqueProduct(product.id));
 
             task.match({
                 Ok: (product) => {
@@ -66,7 +66,7 @@ describe('Inventory Tests', () => {
 
         it('should throw an error if the product does not exist', async () => {
             const randomId = randomUUID();
-            const task = await inventoryRepo.shops.getUniqueProduct(randomId);
+            const task = await inventoryRepo.getUniqueProduct(randomId);
 
             task.match({
                 Ok: () => expect.fail('Task should have failed'),
@@ -85,7 +85,7 @@ describe('Inventory Tests', () => {
                 ]
                 
                 for (let index = 0; index < fakeProducts.length; index++) {
-                    await inventoryRepo.shops.createProduct(
+                    await inventoryRepo.createProduct(
                         shop.id,
                         generateFakeProducts(fakeProducts[index])
                     );
@@ -97,7 +97,7 @@ describe('Inventory Tests', () => {
             })
 
             it('should list all products if no filters are given', async () => {
-                const task = await inventoryRepo.shops.getProducts();
+                const task = await inventoryRepo.getProducts();
 
                 task.match({
                     Ok: (productList) => {
@@ -156,7 +156,7 @@ describe('Inventory Tests', () => {
                 ];
 
                 for (const scenario of testScenarios) {
-                    const task = await inventoryRepo.shops.getProducts(scenario.filter);
+                    const task = await inventoryRepo.getProducts(scenario.filter);
 
                     task.match({
                         Ok: (productList) => {
@@ -173,7 +173,7 @@ describe('Inventory Tests', () => {
             it('should throw a not found error if no products are returned', async () => {
                 await resetDb(db);
 
-                const task = await inventoryRepo.shops.getProducts();
+                const task = await inventoryRepo.getProducts();
 
                 task.match({
                     Ok: () => expect.fail('Task should have failed'),
