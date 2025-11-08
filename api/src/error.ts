@@ -13,3 +13,5 @@ export class ShopCreationError extends Error {};
 export class ProductCreationError extends Error {};
 
 export class NonExistentShopError extends Error {};
+
+export class ServiceError extends Error {};

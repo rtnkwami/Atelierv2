@@ -14,6 +14,11 @@ export default function createShopRouter ({ shopController, tokenVerificator }: 
     router.use(tokenVerificator);
 
     router.get('/me', shopController.getMyShop);
+       
+    router.post('/me/products',
+        validate(shopRequestSchema.CreateProductFieldsSchema), 
+        shopController.createProduct
+    )
 
     return router;
 }

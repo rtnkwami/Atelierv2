@@ -1,22 +1,26 @@
 import { Logger } from "pino"
 import { IShopRepository } from "./shop.repository.ts"
-import { Shops } from "@db-client/client.ts"
+import { Products, Shops } from "@db-client/client.ts"
 import Task from "true-myth/task"
 import { NonExistentShopError, NotFoundError, ServiceError, ShopCreationError } from "error.ts"
 import { DecodedIdToken } from "firebase-admin/auth"
 import { generateDefaultShopName } from "@utils/defaultNames.ts"
+import { IInventoryService } from "modules/inventory/inventory.service.ts"
+import { CreateProductFields } from "./validation/shop.validation.ts"
 
 export interface IShopService {
     createShopForUser: (userData: DecodedIdToken) => Task<Shops, ShopCreationError>;
-    getShopForSeller: (userId: string) => Task<Shops, NonExistentShopError | ServiceError>;
+    getShopForSeller: (sellerId: string) => Task<Shops, NonExistentShopError | ServiceError>;
+    createProductForShop: (sellerId: string, productData: CreateProductFields) => Task<Products, ServiceError>
 }
 
 type dependencies = {
-    shopRepo: IShopRepository,
+    shopRepo: IShopRepository;
+    inventoryService: IInventoryService;
     baseLogger: Logger
 }
 
-export const createShopService = ({ shopRepo, baseLogger }: dependencies): IShopService => {
+export const createShopService = ({ shopRepo, inventoryService, baseLogger }: dependencies): IShopService => {
     const shopServiceLogger = baseLogger.child({ module: 'shops', layer: 'service' });
     
     return {
@@ -45,6 +49,15 @@ export const createShopService = ({ shopRepo, baseLogger }: dependencies): IShop
                     }
                     shopServiceLogger.error(reason, `Error getting shop for user ${sellerId}`);
                     return new ServiceError('Error getting shop for seller', { cause: reason })
+                })
+        },
+
+        createProductForShop: (sellerId, productData) => {
+            return shopRepo.getSellerShop(sellerId)
+                .andThen((shop) => inventoryService.createShopProduct(shop.id, productData))
+                .mapRejected((reason) => {
+                    shopServiceLogger.error(reason, `Error creating product for shop`)
+                    return new ServiceError('Error creating product for shop', { cause: reason });
                 })
         }
     }
