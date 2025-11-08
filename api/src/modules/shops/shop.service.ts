@@ -2,13 +2,13 @@ import { Logger } from "pino"
 import { IShopRepository } from "./shop.repository.ts"
 import { Shops } from "@db-client/client.ts"
 import Task from "true-myth/task"
-import { NonExistentShopError, ShopCreationError } from "error.ts"
+import { NonExistentShopError, NotFoundError, ServiceError, ShopCreationError } from "error.ts"
 import { DecodedIdToken } from "firebase-admin/auth"
 import { generateDefaultShopName } from "@utils/defaultNames.ts"
 
 export interface IShopService {
     createShopForUser: (userData: DecodedIdToken) => Task<Shops, ShopCreationError>;
-    getShopForSeller: (userId: string) => Task<Shops, NonExistentShopError>;
+    getShopForSeller: (userId: string) => Task<Shops, NonExistentShopError | ServiceError>;
 }
 
 type dependencies = {
@@ -20,6 +20,7 @@ export const createShopService = ({ shopRepo, baseLogger }: dependencies): IShop
     const shopServiceLogger = baseLogger.child({ module: 'shops', layer: 'service' });
     
     return {
+        // Internal function (for now)
         createShopForUser: (userData) => {
             const shopName = userData.email ?? generateDefaultShopName();
 
@@ -38,7 +39,12 @@ export const createShopService = ({ shopRepo, baseLogger }: dependencies): IShop
         getShopForSeller: (sellerId) => {
             return shopRepo.getSellerShop(sellerId)
                 .mapRejected(reason => {
-                    return new NonExistentShopError('Error getting shop', { cause: reason })
+                    if (reason instanceof NotFoundError) {
+                        shopServiceLogger.info(`User ${sellerId} tried to access unauthorized shop`);
+                        return new NonExistentShopError('Error getting shop', { cause: reason });
+                    }
+                    shopServiceLogger.error(reason, `Error getting shop for user ${sellerId}`);
+                    return new ServiceError('Error getting shop for seller', { cause: reason })
                 })
         }
     }
