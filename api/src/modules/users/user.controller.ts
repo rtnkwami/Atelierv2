@@ -28,7 +28,7 @@ export const createUserController = ({ userService, baseLogger }: dependencies):
             return res.sendStatus(200)
         },
         upgradeUserToSeller: async (req, res) => {
-            const result = await userService.upgradeUserToSeller(req.user.uid);
+            const result = await userService.upgradeUserToSeller(req.user);
 
             if (result.isErr) {
                 userControllerLogger.error({ error: result.error }, 'Error upgrading user to seller');

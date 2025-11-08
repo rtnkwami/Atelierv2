@@ -22,7 +22,7 @@ type Cradle = {
     baseLogger: Logger;
     httpLogger: HttpLogger;
     app: Express;
-    tokenVerificationMiddleware: RequestHandler
+    tokenVerificator: RequestHandler
     
     userService: IUserService;
     shopService: IShopService;
@@ -48,8 +48,7 @@ export default function createDiContainer (): AwilixContainer<Cradle> {
         baseLogger: asValue(logger),
         httpLogger: asValue(httpLogger),
         app: asFunction(createAPI).singleton(),
-
-        tokenVerificationMiddleware: asValue(verifyJwt),
+        tokenVerificator: asValue(verifyJwt),
 
         userService: asFunction(createUserService).scoped(),
         shopService: asFunction(createShopService).scoped(),

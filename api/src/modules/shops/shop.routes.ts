@@ -1,15 +1,17 @@
 import { RequestHandler, Router } from "express";
 import { IShopController } from "./shop.controller.ts"
+import { shopRequestSchema } from "./validation/shop.validation.ts";
+import { validate } from "middleware/validateRequest.ts";
 
 type dependencies = {
     shopController: IShopController;
-    tokenVerificationMiddleware: RequestHandler
+    tokenVerificator: RequestHandler
 }
 
-export default function createShopRouter ({ shopController, tokenVerificationMiddleware }: dependencies) {
+export default function createShopRouter ({ shopController, tokenVerificator }: dependencies) {
     const router = Router();
 
-    router.use(tokenVerificationMiddleware);
+    router.use(tokenVerificator);
 
     router.get('/me', shopController.getMyShop);
 
