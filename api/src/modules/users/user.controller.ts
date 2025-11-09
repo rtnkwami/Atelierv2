@@ -18,10 +18,10 @@ export const createUserController = ({ userService, baseLogger }: dependencies):
 
     return {
         syncAuthNUsertoDb: async (req, res) => {
-            const authNUserSyncTask = await userService.getOrCreateUser(req.user);
+            const result = await userService.getOrCreateUser(req.user);
             
-            if (authNUserSyncTask.isErr) {
-                userControllerLogger.error({ error: authNUserSyncTask.error }, 'Error syncing user to database');
+            if (result.isErr) {
+                userControllerLogger.error({ error: result.error }, 'Error syncing user to database');
                 return res.status(500).json({error: 'Error syncing user to database' })
             }
             userControllerLogger.info('User synced to database');
