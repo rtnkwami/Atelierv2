@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import createDiContainer from '../../src/di.ts';
 import { Task } from 'true-myth/task';
-import { DatabaseError, ShopCreationError } from 'error.ts';
+import { DatabaseError } from 'error.ts';
 import { mockDecodedIdToken, mockUser } from '../mocks/firebase.mocks.ts';
 import { Shops } from '@db-client/client.ts';
 
