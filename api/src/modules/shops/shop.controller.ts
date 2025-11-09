@@ -38,38 +38,44 @@ export const createShopController = ({ shopService, baseLogger }: dependencies):
             const sellerId = req.user.uid;
             const result = await shopService.getShopForSeller(sellerId);
 
-            if (result.isErr) {
-                if (result.error instanceof NonExistentShopError) { 
-                    return res.status(404).json({ message: 'User does not have a shop' }) 
+            return result.match({
+                Ok: (shop) => res.status(200).json(shop),
+                Err: (reason) => {
+                    if (reason instanceof NonExistentShopError) {
+                        return res.status(404).json({ message: 'User does not have a shop' }) 
+                    }
+                    shopControllerLogger.error(reason, 'Error getting shop');
+                    return res.status(500).json({ message: 'Error getting shop' });
                 }
-                shopControllerLogger.error(result.error, 'Error getting shop');
-                return res.status(500).json({ message: 'Error getting shop' });
-            }
-            return res.status(200).json(result.value)
+            })
         },
 
         updateMyShopInfo: async (req, res) => {
             const sellerId = req.user.uid;
             const shopUpdateData = req.body;
-            
             const result = await shopService.updateShopInfo(sellerId, shopUpdateData);
 
-            if (result.isErr) {
-                return res.status(500).json({ message: 'Error updating shop' });
-            }
-            return res.status(200).json(result.value);
+            return result.match({
+                Ok: (updatedShop) => res.status(200).json(updatedShop),
+                Err: (reason) => {
+                    shopControllerLogger.error(reason, 'Error updating shop');
+                    return res.status(500).json({ message: 'Error updating shop' });
+                }
+            });
         },
 
         createProduct: async (req, res) => {
             const sellerId = req.user.uid;
-            const createProductData = req.body;
-            const result = await shopService.createProductForShop(sellerId, createProductData);
+            const data = req.body;
+            const result = await shopService.createProductForShop(sellerId, data);
 
-            if (result.isErr) {
-                shopControllerLogger.error(result.error, 'Error creating product');
-                return res.status(500).json({ message: 'Error creating shop' });
-            }
-            return res.status(201).json(result.value);
+            return result.match({
+                Ok: (shopProduct) => res.status(201).json(shopProduct),
+                Err: (reason) => {
+                    shopControllerLogger.error(reason, 'Error creating product');
+                    return res.status(500).json({ message: 'Error creating shop' });
+                } 
+            });
         }
     }
 } 
