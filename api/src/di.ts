@@ -16,6 +16,7 @@ import { createShopService, IShopService } from "modules/shops/shop.service.ts";
 import { createInventoryRepository, IInventoryRepository } from "modules/inventory/inventory.repository.ts";
 import { createInventoryService, IInventoryService } from "modules/inventory/inventory.service.ts";
 import createShopRouter from "modules/shops/shop.routes.ts";
+import { createShopController, IShopController } from "modules/shops/shop.controller.ts";
 
 type Cradle = {
     db: PrismaClient;
@@ -29,6 +30,7 @@ type Cradle = {
     inventoryService: IInventoryService;
 
     userController: IUserController;
+    shopController: IShopController;
     
     userRepo: IUserRepository;
     shopRepo: IShopRepository;
@@ -55,6 +57,7 @@ export default function createDiContainer (): AwilixContainer<Cradle> {
         inventoryService: asFunction(createInventoryService).scoped(),
         
         userController: asFunction(createUserController).scoped(),
+        shopController: asFunction(createShopController).scoped(),
         
         userRepo: asFunction(createUserRepository).scoped(),
         shopRepo: asFunction(createShopRepository).scoped(),

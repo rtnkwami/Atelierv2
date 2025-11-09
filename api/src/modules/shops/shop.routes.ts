@@ -11,10 +11,10 @@ type dependencies = {
 export default function createShopRouter ({ shopController, tokenVerificator }: dependencies) {
     const router = Router();
 
-    router.get('/:id', shopController.getAShop);
+    router.get('/public/:id', shopController.getAShop);
     
     router.use(tokenVerificator);
-
+    
     router.get('/me', shopController.getMyShop);
     router.put('/me',
         validate(shopRequestSchema.UpdateShopInfoSchema),
@@ -22,6 +22,7 @@ export default function createShopRouter ({ shopController, tokenVerificator }: 
     );
     router.delete('/me', shopController.deleteMyShop);
        
+    
     // Shop Inventory
     router.post('/me/products',
         validate(shopRequestSchema.CreateProductFieldsSchema), 
