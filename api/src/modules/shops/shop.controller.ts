@@ -5,6 +5,7 @@ import { NonExistentShopError } from "error.ts";
 
 export interface IShopController {
     getMyShop: (req: Request, res: Response) => Promise<Response>;
+    updateMyShopInfo: (req: Request, res: Response) => Promise<Response>;
     createProduct: (req: Request, res: Response) => Promise<Response>;
 }
 
@@ -29,6 +30,18 @@ export const createShopController = ({ shopService, baseLogger }: dependencies):
                 return res.status(500).json({ message: 'Error getting shop' });
             }
             return res.status(200).json(result.value)
+        },
+
+        updateMyShopInfo: async (req, res) => {
+            const sellerId = req.user.uid;
+            const shopUpdateData = req.body;
+            
+            const result = await shopService.updateShopInfo(sellerId, shopUpdateData);
+
+            if (result.isErr) {
+                return res.status(500).json({ message: 'Error updating shop' });
+            }
+            return res.status(200).json(result.value);
         },
 
         createProduct: async (req, res) => {
