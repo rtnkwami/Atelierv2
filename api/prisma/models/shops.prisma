@@ -2,7 +2,7 @@ model Shops {
   id          String     @id @default(uuid()) @db.Uuid
   name        String
   description String
-  user        Users      @relation(fields: [usersId], references: [id])
+  user        Users      @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId     String     @unique
   products    Products[]
   orders      Orders[]
