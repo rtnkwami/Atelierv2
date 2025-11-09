@@ -54,7 +54,7 @@ export const createUserService = ({ userRepo, baseLogger, db, shopService }: dep
                     return task.reject(error);
                 })
                 .mapRejected(reason => {
-                    userServiceLogger.error({ error: reason }, 'Error syncing user');
+                    userServiceLogger.error(reason, 'Error syncing user');
                     return new UserSyncError('Error syncing user', { cause: reason });
                 })
         },
@@ -80,7 +80,7 @@ export const createUserService = ({ userRepo, baseLogger, db, shopService }: dep
             })
             .mapRejected(reason => {
                 userServiceLogger.error(
-                    { error: reason },
+                    reason,
                     `Error upgrading user "${ createUserDto.id }" to seller`
                 )
                 return new SellerUpgradeError('Error upgrading user as seller', { cause: reason })

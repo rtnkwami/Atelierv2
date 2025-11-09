@@ -2,17 +2,17 @@ import { Logger } from "pino"
 import { IShopRepository } from "./shop.repository.ts"
 import { Products, Shops } from "@db-client/client.ts"
 import Task from "true-myth/task"
-import { DatabaseError, NonExistentShopError, NotFoundError, ServiceError, ShopCreationError } from "error.ts"
+import { DatabaseError, NonExistentShopError, NotFoundError, ServiceError } from "error.ts"
 import { DecodedIdToken } from "firebase-admin/auth"
 import { generateDefaultShopName } from "@utils/defaultNames.ts"
 import { IInventoryService } from "modules/inventory/inventory.service.ts"
 import { CreateProductFields, UpdateShopInfoSchema } from "./validation/shop.validation.ts"
 
 export interface IShopService {
-    createShopForUser: (userData: DecodedIdToken) => Task<Shops, ShopCreationError>;
-    getShopForSeller: (sellerId: string) => Task<Shops, NonExistentShopError | ServiceError>;
-    createProductForShop: (sellerId: string, productData: CreateProductFields) => Task<Products, ServiceError>
+    createShopForUser: (userData: DecodedIdToken) => Task<Shops, DatabaseError>;
+    getShopForSeller: (sellerId: string) => Task<Shops, NonExistentShopError | DatabaseError>;
     updateShopInfo: (sellerId: string, shopData: UpdateShopInfoSchema) => Task<Shops, DatabaseError>;
+    createProductForShop: (sellerId: string, productData: CreateProductFields) => Task<Products, ServiceError>
 }
 
 type dependencies = {
@@ -36,8 +36,8 @@ export const createShopService = ({ shopRepo, inventoryService, baseLogger }: de
 
             return shopRepo.createShop(userData.uid, shopData)
                 .mapRejected(reason => {
-                    shopServiceLogger.error({ reason }, `Error creating shop for user "${ userData.uid }"`)
-                    return new ShopCreationError('Error creating shop', { cause: reason });
+                    shopServiceLogger.error(reason, `Error creating shop for user "${ userData.uid }"`)
+                    return reason;
                 })
         },
         
@@ -49,7 +49,7 @@ export const createShopService = ({ shopRepo, inventoryService, baseLogger }: de
                         return new NonExistentShopError('Error getting shop', { cause: reason });
                     }
                     shopServiceLogger.error(reason, `Error getting shop for user ${sellerId}`);
-                    return new ServiceError('Error getting shop for seller', { cause: reason })
+                    return reason;
                 })
         },
 
@@ -58,7 +58,7 @@ export const createShopService = ({ shopRepo, inventoryService, baseLogger }: de
                 .andThen((shop) => shopRepo.updateShop(shop.id, shopData))
                 .mapRejected((reason) => {
                     shopServiceLogger.error(reason, `Error updating shop info for user ${ sellerId }`)
-                    return reason
+                    return reason;
                 })
         },
 
@@ -67,7 +67,7 @@ export const createShopService = ({ shopRepo, inventoryService, baseLogger }: de
                 .andThen((shop) => inventoryService.createShopProduct(shop.id, productData))
                 .mapRejected((reason) => {
                     shopServiceLogger.error(reason, `Error creating product for shop`)
-                    return new ServiceError('Error creating product for shop', { cause: reason });
+                    return reason;
                 })
         }
     }

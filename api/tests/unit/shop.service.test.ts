@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import createDiContainer from '../../src/di.ts';
 import { Task } from 'true-myth/task';
-import { ShopCreationError } from 'error.ts';
+import { DatabaseError, ShopCreationError } from 'error.ts';
 import { mockDecodedIdToken, mockUser } from '../mocks/firebase.mocks.ts';
 import { Shops } from '@db-client/client.ts';
 
@@ -10,14 +10,14 @@ describe('Shop Service', () => {
     const { shopRepo, shopService } = container.cradle;
 
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
     });
 
     afterAll(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
     });
 
-    describe('createShopForUser', () => {
+    describe('User Shop Creation', () => {
         it('should successfully create a shop for a user', async () => {
             const mockShop: Shops = {
                 id: 'shop-123',
@@ -43,14 +43,14 @@ describe('Shop Service', () => {
 
         it('should return ShopCreationError when creation fails', async () => {
             vi.spyOn(shopRepo, 'createShop')
-                .mockReturnValue(Task.reject(new Error('DB write failed')));
+                .mockReturnValue(Task.reject(new DatabaseError('DB write failed')));
 
             const task = await shopService.createShopForUser(mockDecodedIdToken);
 
             task.match({
                 Ok: () => expect.fail('Task should have failed'),
                 Err: (error) => {
-                    expect(error).toBeInstanceOf(ShopCreationError);
+                    expect(error).toBeInstanceOf(DatabaseError);
                 }
             });
         });
