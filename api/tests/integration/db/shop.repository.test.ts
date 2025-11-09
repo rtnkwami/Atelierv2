@@ -2,21 +2,21 @@ import resetDb from '@utils/resetDb.ts';
 import createDiContainer from 'di.ts'
 import { beforeEach, afterAll, it, expect, describe } from 'vitest'
 import { mockUser } from '../../mocks/firebase.mocks.ts';
-import { PostgreSqlContainer } from '@testcontainers/postgresql';
-import { execSync } from 'child_process';
-import { DatabaseError } from 'error.ts';
+import { DatabaseError, NotFoundError } from 'error.ts';
 
 describe('Shop repository', async () => {
-    await using postgresContainer = await new PostgreSqlContainer('postgres:18').start();
-    process.env.DATABASE_URL = postgresContainer.getConnectionUri();
-
-    execSync("npx prisma db push --force-reset", { stdio: "inherit" });
-
     const container = createDiContainer();
     const { db, shopRepo, userRepo } = container.cradle;
 
+    const shopData = {
+        name: 'Test shop',
+        description: 'a shop specifically for this test',
+    };
+    
     beforeEach(async () => {
-        await resetDb(container);
+        await resetDb(db);
+        // Each shop integration test needs at least one user within the database due to associations.
+        await userRepo.createUser(mockUser); 
     });
     
     afterAll(async () => {
@@ -25,34 +25,61 @@ describe('Shop repository', async () => {
 
     
     describe('shop creation', () => {
-        const shopData = {
-            name: 'Test shop',
-            description: 'a shop specifically for this test',
-        };
-
         it('should return a created shop', async () => {
-            
-           const createShopTask = await userRepo.createUser(mockUser)
-                .andThen(() => {
-                    return shopRepo.createShop(mockUser.id, shopData)
-                });
-    
-            expect(createShopTask.isOk).toBe(true);
-            if (createShopTask.isOk) {
-                expect(createShopTask.value.usersId).toEqual(mockUser.id);
-                expect(createShopTask.value.name).toEqual(shopData.name);
-                expect(createShopTask.value.description).toEqual(shopData.description);
-            }
+            const task = await shopRepo.createShop(mockUser.id, shopData);
+
+            task.match({
+                Ok: (shop) => {
+                    expect(shop.usersId).toEqual(mockUser.id);
+                    expect(shop.name).toEqual(shopData.name);
+                    expect(shop.description).toEqual(shopData.description);
+                },
+                Err: (error) => {
+                    console.error('Error during shop creation test', error);
+                    expect.fail('Task should have returned a created shop');     
+                }
+            });
         });
 
         it('should return a database error on failure', async () => {
-            const createShopTask = await shopRepo.createShop('nonexistent user id', shopData);
+            const task = await shopRepo.createShop('nonexistent user id', shopData);
 
-            expect(createShopTask.isErr).toBe(true);
-            if (createShopTask.isErr) {
-                expect(createShopTask.error).toBeInstanceOf(DatabaseError);
-            }
+            task.match({
+                Ok: () => { expect.fail('Task should have failed'); },
+                Err: (error) => {
+                    expect(error).toBeInstanceOf(DatabaseError);
+                }
+            });
+        });
+        
+        describe('shop listing', () => {
+            it('should return a single shop', async () => {
+                const task = await shopRepo.createShop(mockUser.id, shopData)
+                    .andThen((shop) => shopRepo.getShop(shop.id))
+
+                task.match({
+                    Ok: (shop) => {
+                        expect(shop.name).toBe(shopData.name);
+                        expect(shop.description).toBe(shopData.description);
+                    },
+                    Err: (error) => {
+                        console.log('Error during shop listing test', error);
+                        expect.fail('Task should have returned a single shop');
+                    }
+                })
+            });
+
+            it('should return a NotFoundError for nonexistent shop', async () => {
+                // getShop requires a valid uuid, otherwise test will fail with database error
+                const task = await shopRepo.getShop('f2e6e2c3-0a9b-4fd0-b75a-bc782511a622');
+
+                task.match({
+                    Ok: () => { expect.fail('Should not have found shop'); },
+                    Err: (error) => {
+                        expect(error).toBeInstanceOf(NotFoundError);
+                    }
+                });
+            })            
         })
     })
-
 });

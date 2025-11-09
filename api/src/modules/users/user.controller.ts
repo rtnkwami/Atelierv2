@@ -18,24 +18,30 @@ export const createUserController = ({ userService, baseLogger }: dependencies):
 
     return {
         syncAuthNUsertoDb: async (req, res) => {
-            const authNUserSyncTask = await userService.getOrCreateUser(req.user);
-            
-            if (authNUserSyncTask.isErr) {
-                userControllerLogger.error({ error: authNUserSyncTask.error }, 'Error syncing user to database');
-                return res.status(500).json({error: 'Error syncing user to database' })
-            }
-            userControllerLogger.info('User synced to database');
-            return res.sendStatus(200)
+            const result = await userService.getOrCreateUser(req.user);
+            return result.match({
+                Ok: () => {
+                    userControllerLogger.info('User synced to database');
+                    return res.sendStatus(200)
+                },
+                Err: (reason) => {
+                    userControllerLogger.error(reason, 'Error syncing user to database');
+                    return res.status(500).json({ error: 'Error syncing user to database' })
+                }
+            })
         },
         upgradeUserToSeller: async (req, res) => {
-            const result = await userService.upgradeUserToSeller(req.user.uid);
-
-            if (result.isErr) {
-                userControllerLogger.error({ error: result.error }, 'Error upgrading user to seller');
-                return res.status(500).json({ error: 'Error upgrading user to seller' });
-            }
-            userControllerLogger.info('User upgraded as a seller');
-            return res.sendStatus(200)
+            const result = await userService.upgradeUserToSeller(req.user);
+            return result.match({
+                Ok: () => {
+                    userControllerLogger.info('User upgraded as a seller');
+                    return res.sendStatus(200);
+                },
+                Err: (reason) => {
+                    userControllerLogger.error(reason, 'Error upgrading user to seller');
+                    return res.status(500).json({ error: 'Error upgrading user to seller' });
+                }
+            });
         }
     }
 

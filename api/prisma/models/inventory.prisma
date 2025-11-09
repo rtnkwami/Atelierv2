@@ -9,8 +9,10 @@ model Products {
   images            String[]
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
-  Shops             Shops           @relation(fields: [shopsId], references: [id])
-  shopsId           String          @unique @db.Uuid
+  Shops             Shops           @relation(fields: [shopsId], references: [id], onDelete: Cascade)
+  shopsId           String          @db.Uuid
   OrderProducts     OrderProducts[]
   ProductViews      ProductViews[]
+
+  @@unique([id, shopsId])
 }

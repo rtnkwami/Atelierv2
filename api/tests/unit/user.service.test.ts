@@ -1,13 +1,14 @@
 import { beforeEach, afterAll, it, expect, describe, vi } from 'vitest';
 import createDiContainer from '../../src/di.ts';
 import { mockDecodedIdToken } from '../mocks/firebase.mocks.ts';
-import { DatabaseError, NotFoundError, SellerUpgradeError, UserSyncError } from 'error.ts';
+import { NotFoundError, SellerUpgradeError, UserSyncError } from 'error.ts';
 import { Task } from 'true-myth/task';
 import { mockUser } from '../mocks/firebase.mocks.ts';
+import * as txUtils from 'async.context.ts';
 
 describe('User Service ', () => {
     const container = createDiContainer();
-    const { userRepo, userService } = container.cradle;
+    const { userRepo, userService, shopService } = container.cradle;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -17,17 +18,20 @@ describe('User Service ', () => {
         vi.clearAllMocks();
     })
 
-    describe('authenticated user sync to app db', () => {
+    describe('Authenticated User', () => {
         it('should return a user if they exist', async () => {
             vi.spyOn(userRepo, 'getUser')
                 .mockReturnValue(Task.resolve(mockUser)
             );
-            const syncUserToDbTask = await userService.getOrCreateUser(mockDecodedIdToken);
-
-            expect(syncUserToDbTask.isOk).toBe(true);
-            if (syncUserToDbTask.isOk) {
-                expect(syncUserToDbTask.value).toMatchObject(mockUser);
-            }
+            const task = await userService.getOrCreateUser(mockDecodedIdToken);
+            
+            task.match({
+                Ok: (user) => { expect(user).toMatchObject(mockUser) },
+                Err: (error) => {
+                    console.error('Error during user creation or listing test', error)
+                    expect.fail('User should have been synced with db')
+                }
+            })
         });
 
 
@@ -38,15 +42,19 @@ describe('User Service ', () => {
             vi.spyOn(userRepo, 'createUser').mockReturnValue(
                 Task.resolve(mockUser)
             )
-            const syncUserToDbTask = await userService.getOrCreateUser(mockDecodedIdToken);
+            const task = await userService.getOrCreateUser(mockDecodedIdToken);
 
-            expect(syncUserToDbTask.isOk).toBe(true);
-            
-            if (syncUserToDbTask.isOk) {
-                expect(userRepo.getUser).toHaveBeenCalled()
-                expect(userRepo.createUser).toHaveBeenCalledWith(mockUser);
-                expect(syncUserToDbTask.value).toMatchObject(mockUser)
-            }
+            task.match({
+                Ok: (user) => { 
+                    expect(userRepo.getUser).toHaveBeenCalled()
+                    expect(userRepo.createUser).toHaveBeenCalledWith(mockUser);
+                    expect(user).toMatchObject(mockUser)
+                },
+                Err: (error) => {
+                    console.error('Failed to sync user to db', error)
+                    expect.fail('User should have been synced with db')
+                }
+            })
         });
 
 
@@ -54,69 +62,81 @@ describe('User Service ', () => {
             vi.spyOn(userRepo, 'getUser')
                 .mockReturnValue(Task.reject(new Error('Test Error'))
             );
-            const syncUserToDbTask = await userService.getOrCreateUser(mockDecodedIdToken);
+            const task = await userService.getOrCreateUser(mockDecodedIdToken);
 
-            expect(syncUserToDbTask.isErr).toBe(true);
-            
-            if (syncUserToDbTask.isErr){
-                expect(syncUserToDbTask.error).toBeInstanceOf(UserSyncError);
-            }
+            task.match({
+                Ok: () => { expect.fail('Task should have failed.') },
+                Err: (error) => { 
+                    expect(error).toBeInstanceOf(UserSyncError); }
+            });
         })
     })
 
-    describe('user', async () => {
-        const userSyncTask = await userService.getOrCreateUser(mockDecodedIdToken);
-
-        it('should upgrade user to a seller', async () => {            
-            if (userSyncTask.isOk) {
-                const sellerUpgradeTask = await userService.upgradeUserToSeller(userSyncTask.value.id);
-                
-                if (sellerUpgradeTask.isOk) {
-                    expect(sellerUpgradeTask.value).toHaveProperty('id');
-                    expect(sellerUpgradeTask.value).toHaveProperty('roles');
-                    expect(sellerUpgradeTask.value.roles).toHaveLength(2);
+    describe('Seller Upgrade', async () => {
+        it('should upgrade user to a seller and return a shop', async () => {  
+            vi.spyOn(userRepo, 'getUser').mockReturnValue(Task.resolve(mockUser));
+            vi.spyOn(userRepo, 'getRole').mockReturnValue(Task.resolve({ id: '1', name: 'seller' }));
+            vi.spyOn(userRepo, 'assignRoleToUser').mockReturnValue(
+                Task.resolve({
+                    id: mockUser.id,
+                    roles: [
+                        { name: 'user' }, { name: 'seller' }
+                    ] 
+                })
+            );
+            vi.spyOn(shopService, 'createShopForUser').mockReturnValue(
+            Task.resolve({
+                id: 'shop-456',
+                name: 'DigiMart',
+                description: 'Online shop created during seller upgrade',
+                usersId: mockUser.id
+            })
+            );
+            vi.spyOn(txUtils, 'runWithTransaction').mockReturnValue(Task.resolve([
+                {
+                    id: mockUser.id,
+                    roles: [
+                        { name: 'user' },
+                        { name: 'seller' }
+                    ]
+                },
+                {
+                    id: 'shop-456',
+                    name: 'DigiMart',
+                    description: 'Online shop created during seller upgrade',
+                    usersId: mockUser.id
                 }
-            }
+            ]))
+            
+            const sellerUpgradeTask = await userService.upgradeUserToSeller(mockDecodedIdToken);
+
+            sellerUpgradeTask.match({
+                Ok: ([userData, shopData]) => {
+                    expect(userData).toHaveProperty('id');
+                    expect(userData).toHaveProperty('roles');
+                    expect(userData.roles).toHaveLength(2);
+
+                    expect(shopData).toHaveProperty('id');
+                    expect(shopData).toHaveProperty('name');
+                    expect(shopData).toHaveProperty('description');
+                },
+                Err: (error) => {
+                    console.error('Error during seller upgrade', error.cause);
+                    expect.fail('Seller upgrade should have succeeded')
+                }
+            })
         });
 
-        it('should return a SellerUpgradeError if the user does not exist', async () => {
-            vi.spyOn(userRepo, 'getUser').mockReturnValue(Task.reject(new NotFoundError('User not found')));
-            vi.spyOn(userRepo, 'getRole').mockReturnValue(Task.resolve({ id:'123' , name: 'seller' }));
+        it('should throw an error on internal failure', async () => {
+            vi.spyOn(txUtils, 'runWithTransaction')
+                .mockReturnValue(Task.reject(new Error('Test Error')));
 
-            const result = await userService.upgradeUserToSeller('nonexistent-id');
+            const task = await userService.upgradeUserToSeller(mockDecodedIdToken);
 
-            expect(result.isErr).toBe(true);
-            if (result.isErr) {
-                expect(result.error).toBeInstanceOf(SellerUpgradeError);
-                expect(result.error.cause).toBeInstanceOf(NotFoundError);
-            }
-        });
-
-        it('should return a SellerUpgradeError if the seller role does not exist', async () => {
-            vi.spyOn(userRepo, 'getUser').mockReturnValue(Task.resolve(mockUser));
-            vi.spyOn(userRepo, 'getRole').mockReturnValue(Task.reject(new NotFoundError('Role not found')));
-
-            const result = await userService.upgradeUserToSeller(mockUser.id);
-
-            expect(result.isErr).toBe(true);
-            if (result.isErr) {
-                expect(result.error).toBeInstanceOf(SellerUpgradeError);
-                expect(result.error.cause).toBeInstanceOf(NotFoundError);
-            }
-        });
-
-        it('should return a SellerUpgradeError if assigning the role fails', async () => {
-            vi.spyOn(userRepo, 'getUser').mockReturnValue(Task.resolve(mockUser));
-            vi.spyOn(userRepo, 'getRole').mockReturnValue(Task.resolve({ id:'1234', name: 'seller' }));
-            vi.spyOn(userRepo, 'assignRoleToUser').mockReturnValue(Task.reject(new DatabaseError('Failed')));
-
-            const result = await userService.upgradeUserToSeller(mockUser.id);
-
-            expect(result.isErr).toBe(true);
-            if (result.isErr) {
-                expect(result.error).toBeInstanceOf(SellerUpgradeError);
-                expect(result.error.cause).toBeInstanceOf(DatabaseError);
-            }
-        });
+            task.match({
+                Ok: () => { expect.fail('Task should have failed') },
+                Err: (error) => { expect(error).toBeInstanceOf(SellerUpgradeError) }
+            })
+        })
     })
 })

@@ -3,6 +3,7 @@ import { PrismaClient } from "@db-client/client.ts";
 import { UsersCreateInput } from "@db-client/models.ts";
 import type { Roles, Users } from "@db-client/client.ts";
 import Task, { tryOrElse } from "true-myth/task";
+import { getTxOrDbClient } from "async.context.ts";
 
 export interface IUserRepository {
     createUser: (userData: UsersCreateInput) => Task<Users, DatabaseError>;
@@ -30,7 +31,8 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 return new DatabaseError(`Database query failed: ${ String(reason) }`);
             },
             async () => {
-                const user = await db.users.findUnique({
+                const client = getTxOrDbClient(db);
+                const user = await client.users.findUnique({
                     where: { id: userId }
                 });
 
@@ -42,9 +44,10 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
         ),
     createUser: (userData) =>
         tryOrElse(
-            (reason) => new DatabaseError('Error creating database', { cause: reason }),
+            (reason) => new DatabaseError('Error creating user', { cause: reason }),
             async () => {
-                const newUser = await db.users.create({
+                const client = getTxOrDbClient(db);
+                const newUser = await client.users.create({
                     data: {
                         id: userData.id,
                         name: userData.name,
@@ -69,7 +72,8 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                 return new DatabaseError('Error getting user roles', { cause: reason })
             },
             async () => {
-                const userRoles = await db.users.update({
+                const client = getTxOrDbClient(db);
+                const userRoles = await client.users.update({
                     where: { id: userId },
                     data: {
                         roles: { connect: { name: roleName } }
@@ -92,7 +96,8 @@ export const createUserRepository = ({ db }: dependencies): IUserRepository => (
                     return new DatabaseError('Error getting role', { cause: reason });
                 },
                 async () => {
-                    const role = await db.roles.findUnique({
+                    const client = getTxOrDbClient(db);
+                    const role = await client.roles.findUnique({
                         where: {
                             name: roleName
                         }

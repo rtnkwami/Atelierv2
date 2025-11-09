@@ -3,13 +3,13 @@ import { IUserController } from "./user.controller.ts"
 
 type dependencies = {
     userController: IUserController;
-    tokenVerificationMiddleware: RequestHandler;
+    tokenVerificator: RequestHandler;
 }
 
-export default function createUserRouter ({ userController, tokenVerificationMiddleware }: dependencies){
+export default function createUserRouter ({ userController, tokenVerificator }: dependencies){
     const router = Router();
 
-    router.use(tokenVerificationMiddleware);
+    router.use(tokenVerificator);
 
     router.post('/me', userController.syncAuthNUsertoDb);
     router.post('/me/seller', userController.upgradeUserToSeller)

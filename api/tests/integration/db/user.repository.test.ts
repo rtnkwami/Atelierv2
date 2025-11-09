@@ -2,20 +2,14 @@ import { describe, beforeEach, it, expect, afterAll } from 'vitest';
 import createDiContainer from "../../../src/di.ts";
 import resetDb from '@utils/resetDb.ts'
 import { DatabaseError, NotFoundError } from '../../../src/error.ts';
-import { PostgreSqlContainer } from '@testcontainers/postgresql';
-import { execSync } from 'child_process';
+import { mockUser } from '../../mocks/firebase.mocks.ts';
 
 describe('User Repository', async () => {
-    await using postgresContainer = await new PostgreSqlContainer('postgres:18').start();
-    process.env.DATABASE_URL = postgresContainer.getConnectionUri();
-
-    execSync("npx prisma db push --force-reset", { stdio: "inherit" });
-
     const container = createDiContainer();
     const { db, userRepo } = container.cradle;
     
     beforeEach(async () => {
-        await resetDb(container);
+        await resetDb(db);
     });
 
     afterAll(async () => {
@@ -24,115 +18,104 @@ describe('User Repository', async () => {
 
     describe('user creation', () => {
         it('should create new user', async () => {
-            const createUserTask = await userRepo.createUser({
-                id: "2d43frg5g53",
-                name: 'John Doe',
-                email: 'jd@gmail.com',
-                avatar: 'https://funnypics.com/jojo.png'
-            });
-    
-            expect(createUserTask.isOk).toBe(true);
-    
-            if (createUserTask.isOk) {
-                const newUser = createUserTask.value;
+            const task = await userRepo.createUser(mockUser);
 
-                expect(newUser).toMatchObject({
-                    id: "2d43frg5g53",
-                    name: 'John Doe',
-                    email: 'jd@gmail.com',
-                    avatar: 'https://funnypics.com/jojo.png'
-                })
-            }
+            task.match({
+                Ok: (newUser) => {
+                    expect(newUser).toMatchObject(mockUser);
+                },
+                Err: (error) => {
+                    console.error('Error during user creation test', error);
+                    expect.fail('User creation should have succeeded');
+                }
+            });
         });
     })
 
-    describe('user lisitng', () => {
+    describe('user listing', () => {
         it('should get a user', async () => {
-            await userRepo.createUser({
-                id: '123456',
-                name: 'Mary Jane',
-                email: 'mj@outlook.com',
-                avatar: 'https://reallygoodlooking.com/mj.jpg'
+            const task = await userRepo.createUser(mockUser)
+                .andThen(() => userRepo.getUser(mockUser.id));
+
+            task.match({
+                Ok: (user) => {
+                    expect(user).toMatchObject(mockUser);
+                },
+                Err: (error) => {
+                    console.error('Error during user listing test', error);
+                    expect.fail('Get user should have succeeded');
+                }
             });
-
-            const getUserTask = await userRepo.getUser('123456');
-            expect(getUserTask.isOk).toBe(true);
-            
-            if(getUserTask.isOk) {
-                expect(getUserTask.value).toMatchObject({
-                    id: '123456',
-                    name: 'Mary Jane',
-                    email: 'mj@outlook.com',
-                    avatar: 'https://reallygoodlooking.com/mj.jpg'
-                })
-            }
         });
-
 
         it('should return a NotFoundError on nonexistent user', async () => {
-            const getUserTask = await userRepo.getUser('123456');
-            expect(getUserTask.isErr).toBe(true);
+            const task = await userRepo.getUser('123456')
             
-            if (getUserTask.isErr){
-                expect(getUserTask.error).toBeInstanceOf(NotFoundError);
-            }
+            task.match({
+                Ok: () => { expect.fail('Should not have found user'); },
+                Err: (error) => {
+                    expect(error).toBeInstanceOf(NotFoundError);
+                }
+            });
         });
     })
-    
     
     describe('user updating', () => {
         it('should update user roles', async () => {
-            const createUserTask = await userRepo.createUser({
-                id: '123456',
-                name: 'Mary Jane',
-                email: 'mj@outlook.com',
-                avatar: 'https://reallygoodlooking.com/mj.jpg'
+            const task = await userRepo.createUser(mockUser)
+                .andThen((newUser) => userRepo.assignRoleToUser(newUser.id, 'seller'))
+    
+            task.match({
+                Ok: (userWithRoles) => {
+                    expect(userWithRoles).toHaveProperty('id');
+                    expect(userWithRoles).toHaveProperty('roles');
+                    expect(userWithRoles.roles).toHaveLength(2);
+                },
+                Err: (error) => {
+                    console.error('Error during user role update test', error);
+                    expect.fail('Role assignment should have succeeded');
+                }
             });
-            expect(createUserTask.isOk).toBe(true);
-    
-            if (createUserTask.isOk){
-                const newUser = createUserTask.value
-                const getUserRolesTask = await userRepo.assignRoleToUser(newUser.id, 'seller');
-    
-                if(getUserRolesTask.isErr){ throw getUserRolesTask.error }
-    
-                expect(getUserRolesTask.value).toHaveProperty('id');
-                expect(getUserRolesTask.value).toHaveProperty('roles');
-                expect(getUserRolesTask.value.roles).toHaveLength(2);
-            }
         })
     
-        
         it('should throw a database error on failure', async () => {
-            const getUserRolesTask = await userRepo.assignRoleToUser('12345', 'seller');
-            expect(getUserRolesTask.isErr).toBe(true);
+            const task = await userRepo.assignRoleToUser('12345', 'seller')
             
-            if (getUserRolesTask.isErr) {
-                expect(getUserRolesTask.error).toBeInstanceOf(DatabaseError);
-            }
+            task.match({
+                Ok: () => { expect.fail('Should have failed with DatabaseError'); },
+                Err: (error) => {
+                    expect(error).toBeInstanceOf(DatabaseError);
+                }
+            });
         });
     })
 
     describe('user auth actions', () => {
         it('should return a role given a role name', async () => {
-            const getRoleTask = await userRepo.getRole('seller');
+            const task = await userRepo.getRole('seller')
 
-            expect(getRoleTask.isOk).toBe(true);
-            if (getRoleTask.isOk) {
-                expect(getRoleTask.value).toHaveProperty('id');
-                expect(getRoleTask.value).toHaveProperty('name');
-                expect(getRoleTask.value.name).toBe('seller');
-            }
+            task.match({
+                Ok: (role) => {
+                    expect(role).toHaveProperty('id');
+                    expect(role).toHaveProperty('name');
+                    expect(role.name).toBe('seller');
+                },
+                Err: (error) => {
+                    console.error('Error during role listing test', error);
+                    expect.fail('Get role should have succeeded');
+                }
+            });
         });
 
-        
         it('should throw a not found error on nonexistent role', async () => {
-            const getRoleTask = await userRepo.getRole('invalid_role');
-            expect(getRoleTask.isErr).toBe(true);
-
-            if (getRoleTask.isErr){
-                expect(getRoleTask.error).toBeInstanceOf(NotFoundError);
-            }
+            const task = await userRepo.getRole('invalid_role')
+            
+            task.match({
+                Ok: () => { expect.fail('Should not have found role'); },
+                Err: (error) => {
+                    expect(error).toBeInstanceOf(NotFoundError);
+                }
+            });
         })
     })
 });
