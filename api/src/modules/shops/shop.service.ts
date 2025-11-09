@@ -2,16 +2,17 @@ import { Logger } from "pino"
 import { IShopRepository } from "./shop.repository.ts"
 import { Products, Shops } from "@db-client/client.ts"
 import Task from "true-myth/task"
-import { NonExistentShopError, NotFoundError, ServiceError, ShopCreationError } from "error.ts"
+import { DatabaseError, NonExistentShopError, NotFoundError, ServiceError, ShopCreationError } from "error.ts"
 import { DecodedIdToken } from "firebase-admin/auth"
 import { generateDefaultShopName } from "@utils/defaultNames.ts"
 import { IInventoryService } from "modules/inventory/inventory.service.ts"
-import { CreateProductFields } from "./validation/shop.validation.ts"
+import { CreateProductFields, UpdateShopInfoSchema } from "./validation/shop.validation.ts"
 
 export interface IShopService {
     createShopForUser: (userData: DecodedIdToken) => Task<Shops, ShopCreationError>;
     getShopForSeller: (sellerId: string) => Task<Shops, NonExistentShopError | ServiceError>;
     createProductForShop: (sellerId: string, productData: CreateProductFields) => Task<Products, ServiceError>
+    updateShopInfo: (sellerId: string, shopData: UpdateShopInfoSchema) => Task<Shops, DatabaseError>;
 }
 
 type dependencies = {
@@ -49,6 +50,15 @@ export const createShopService = ({ shopRepo, inventoryService, baseLogger }: de
                     }
                     shopServiceLogger.error(reason, `Error getting shop for user ${sellerId}`);
                     return new ServiceError('Error getting shop for seller', { cause: reason })
+                })
+        },
+
+        updateShopInfo: (sellerId, shopData) => {
+            return shopRepo.getSellerShop(sellerId)
+                .andThen((shop) => shopRepo.updateShop(shop.id, shopData))
+                .mapRejected((reason) => {
+                    shopServiceLogger.error(reason, `Error updating shop info for user ${ sellerId }`)
+                    return reason
                 })
         },
 
