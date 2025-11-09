@@ -9,6 +9,7 @@ import { IInventoryService } from "modules/inventory/inventory.service.ts"
 import { CreateProductFields, UpdateShopInfoSchema } from "./validation/shop.validation.ts"
 
 export interface IShopService {
+    getAShop: (shopId: string) => Task<Shops, NotFoundError | DatabaseError>;
     createShopForUser: (userData: DecodedIdToken) => Task<Shops, DatabaseError>;
     getShopForSeller: (sellerId: string) => Task<Shops, NonExistentShopError | DatabaseError>;
     updateShopInfo: (sellerId: string, shopData: UpdateShopInfoSchema) => Task<Shops, DatabaseError>;
@@ -25,6 +26,11 @@ export const createShopService = ({ shopRepo, inventoryService, baseLogger }: de
     const shopServiceLogger = baseLogger.child({ module: 'shops', layer: 'service' });
     
     return {
+        getAShop: (shopId) => {
+            return shopRepo.getShop(shopId)
+                .mapRejected(reason => reason);
+        },
+        
         // Internal function (for now)
         createShopForUser: (userData) => {
             const shopName = userData.email ?? generateDefaultShopName();

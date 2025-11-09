@@ -13,11 +13,13 @@ export default function createShopRouter ({ shopController, tokenVerificator }: 
 
     router.use(tokenVerificator);
 
+    router.get('/:id', shopController.getAShop);
+
     router.get('/me', shopController.getMyShop);
     router.put('/me',
         validate(shopRequestSchema.UpdateShopInfoSchema),
         shopController.updateMyShopInfo
-    )
+    );
        
     router.post('/me/products',
         validate(shopRequestSchema.CreateProductFieldsSchema), 
