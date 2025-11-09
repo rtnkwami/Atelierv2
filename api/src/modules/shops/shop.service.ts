@@ -13,6 +13,7 @@ export interface IShopService {
     createShopForUser: (userData: DecodedIdToken) => Task<Shops, DatabaseError>;
     getShopForSeller: (sellerId: string) => Task<Shops, NonExistentShopError | DatabaseError>;
     updateShopInfo: (sellerId: string, shopData: UpdateShopInfoSchema) => Task<Shops, DatabaseError>;
+    deleteSellerShop: (sellerId: string) => Task<Shops, NotFoundError | DatabaseError>;
     createProductForShop: (sellerId: string, productData: CreateProductFields) => Task<Products, ServiceError>
 }
 
@@ -66,6 +67,12 @@ export const createShopService = ({ shopRepo, inventoryService, baseLogger }: de
                     shopServiceLogger.error(reason, `Error updating shop info for user ${ sellerId }`)
                     return reason;
                 })
+        },
+
+        deleteSellerShop: (sellerId) => {
+            return shopRepo.getSellerShop(sellerId)
+                .andThen((shop) => shopRepo.deleteShop(shop.id))
+                .mapRejected((reason) => reason);
         },
 
         createProductForShop: (sellerId, productData) => {

@@ -11,6 +11,7 @@ export interface IShopRepository {
     getShop: (shopId: string) => Task<Shops, NotFoundError | DatabaseError>;
     getSellerShop: (sellerId: string) => Task<Shops, NotFoundError | DatabaseError>;
     updateShop: (shopId: string, shopUpdateData: UpdateShopInfoSchema) => Task<Shops, DatabaseError>;
+    deleteShop: (shopId: string) => Task<Shops, DatabaseError>;
 }
 
 type dependencies = {
@@ -104,6 +105,22 @@ export const createShopRepository = ({ db, baseLogger }: dependencies): IShopRep
                     });
 
                     return updatedShopInfo;
+                }
+            ),
+        deleteShop: (shopId) =>
+            tryOrElse(
+                (reason) => {
+                    shopRepoLogger.error(reason, `Error deleting shop ${ shopId }`);
+                    return new DatabaseError('Error deleting shop');
+                },
+                async () => {
+                    const client = getTxOrDbClient(db);
+                    const deletedShop = await client.shops.delete({
+                        where: {
+                            id: shopId
+                        }
+                    });
+                    return deletedShop;
                 }
             )
     }
