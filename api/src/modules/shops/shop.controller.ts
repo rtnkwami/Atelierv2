@@ -7,6 +7,7 @@ export interface IShopController {
     getAShop: (req: Request<{ id: string }>, res: Response) => Promise<Response>;
     getMyShop: (req: Request, res: Response) => Promise<Response>;
     updateMyShopInfo: (req: Request, res: Response) => Promise<Response>;
+    deleteMyShop: (req: Request, res: Response) => Promise<Response>;
     createProduct: (req: Request, res: Response) => Promise<Response>;
 }
 
@@ -62,6 +63,25 @@ export const createShopController = ({ shopService, baseLogger }: dependencies):
                     return res.status(500).json({ message: 'Error updating shop' });
                 }
             });
+        },
+
+        deleteMyShop: async (req, res) => {
+            const sellerId = req.user.uid;
+            const result = await shopService.deleteSellerShop(sellerId);
+            
+            return result.match({
+                Ok: (deletedShop) => {
+                    shopControllerLogger.info(`Seller ${ sellerId } deleted their shop ${ deletedShop.id }`)
+                    return res.status(200).json(deletedShop)
+                },
+                Err: (reason) => {
+                    if (reason instanceof NotFoundError) {
+                        return res.status(404).json({ message: 'Shop does not exist' });
+                    }
+                    shopControllerLogger.error(reason, `Error deleting shop for user ${ sellerId }`);
+                    return res.status(500).json({ message: 'Error deleting shop' });
+                }
+            })
         },
 
         createProduct: async (req, res) => {
