@@ -28,10 +28,24 @@ const ProductSearchFiltersSchema = z.object({
   shopId: z.string().optional(),
 });
 
+const CreateShopSchema = z.object({
+    name: z.string(),
+    description: z.string()
+});
+
+const UpdateShopInfoSchema = z.object({
+    name: z.string(),
+    description: z.string()
+});
+
 export type CreateProductFields = z.infer<typeof CreateProductFieldsSchema>;
 export type ProductSearchFilters = z.infer<typeof ProductSearchFiltersSchema>;
+export type CreateShopSchema = z.infer<typeof CreateShopSchema>;
+export type UpdateShopInfoSchema = z.infer<typeof UpdateShopInfoSchema>;
 
 export const shopRequestSchema = {
     CreateProductFieldsSchema,
-    ProductSearchFiltersSchema
+    ProductSearchFiltersSchema,
+    CreateShopSchema,
+    UpdateShopInfoSchema
 }

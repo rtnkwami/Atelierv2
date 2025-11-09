@@ -3,18 +3,15 @@ import { getTxOrDbClient } from "async.context.ts";
 import { DatabaseError, NotFoundError } from "error.ts"
 import { Logger } from "pino";
 import Task, { tryOrElse } from 'true-myth/task'
+import { CreateShopSchema, UpdateShopInfoSchema } from "./validation/shop.validation.ts";
 
-type CreateShopDto = {
-    name: string;
-    description: string;
-}
 
 export interface IShopRepository {
-    createShop: (userId: string, shopData: CreateShopDto) => Task<Shops, DatabaseError>;
+    createShop: (userId: string, shopData: CreateShopSchema) => Task<Shops, DatabaseError>;
     getShop: (shopId: string) => Task<Shops, NotFoundError | DatabaseError>;
     getSellerShop: (sellerId: string) => Task<Shops, NotFoundError | DatabaseError>;
+    updateShop: (shopId: string, shopUpdateData: UpdateShopInfoSchema) => Task<Shops, DatabaseError>;
 }
-
 
 type dependencies = {
     db: PrismaClient;
@@ -86,6 +83,27 @@ export const createShopRepository = ({ db, baseLogger }: dependencies): IShopRep
                         throw new NotFoundError(`Shop does not exist for seller ${ sellerId }`);
                     }
                     return shop;
+                }
+            ),
+        updateShop: (shopId, shopUpdateData) =>
+            tryOrElse(
+                (reason) => new DatabaseError('Error updating shop information', { cause: reason }),
+                async () => {
+                    
+                    const dataClause = {
+                        ...(shopUpdateData?.name && { name: shopUpdateData.name }),
+                        ...(shopUpdateData?.description && { description: shopUpdateData.description })
+                    }
+                    
+                    const client = getTxOrDbClient(db);
+                    const updatedShopInfo = client.shops.update({
+                        where: {
+                            id: shopId
+                        },
+                        data: dataClause
+                    });
+
+                    return updatedShopInfo;
                 }
             )
     }
